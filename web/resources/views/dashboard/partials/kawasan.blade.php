@@ -4,7 +4,7 @@
     $perubahanKawasan = ($kawasan['akhir']['total'] - $kawasan['awal']['total']) / $kawasan['awal']['total'] * 100;
 @endphp
 
-<x-bagian id="kawasan" data-dataset="D1" nomor="1" judul="Seharusnya: luas kawasan hutan" sumber="D1 · BPS · XLSX · ha"
+<x-bagian id="kawasan" data-dataset="D1" nomor="1" ikon="perisai" judul="Seharusnya: luas kawasan hutan" sumber="D1 · BPS · XLSX · ha"
           sub="Kawasan hutan adalah wilayah yang ditetapkan pemerintah sebagai hutan lewat SK Menteri — status hukum, bukan hasil pengamatan lapangan.">
     <div class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <x-grafik id="chartKawasanProvinsi" judul="Luas kawasan hutan per provinsi, {{ $kawasan['tahun'] }}"
@@ -20,12 +20,12 @@
                 <div class="flex items-end gap-6">
                     <div>
                         <div class="text-xs text-ink-3">{{ $kawasan['awal']['tahun'] }}</div>
-                        <div class="text-2xl font-bold tracking-tight">{{ F::ringkas($kawasan['awal']['total']) }} <span class="text-sm font-medium text-ink-3">ha</span></div>
+                        <div class="text-2xl font-bold">{{ F::ringkas($kawasan['awal']['total']) }} <span class="text-sm font-medium text-ink-3">ha</span></div>
                     </div>
                     <div class="pb-1 text-ink-3">→</div>
                     <div>
                         <div class="text-xs text-ink-3">{{ $kawasan['akhir']['tahun'] }}</div>
-                        <div class="text-2xl font-bold tracking-tight">{{ F::ringkas($kawasan['akhir']['total']) }} <span class="text-sm font-medium text-ink-3">ha</span></div>
+                        <div class="text-2xl font-bold">{{ F::ringkas($kawasan['akhir']['total']) }} <span class="text-sm font-medium text-ink-3">ha</span></div>
                     </div>
                     <div class="ml-auto pb-1 text-sm font-semibold text-ink-2">{{ F::persen($perubahanKawasan, 2, true) }}</div>
                 </div>

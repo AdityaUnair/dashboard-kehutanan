@@ -1,6 +1,6 @@
 @use('App\Support\Format', 'F')
 
-<x-bagian id="deforestasi" data-dataset="D5" hidden nomor="3" judul="Seberapa cepat hutan hilang: deforestasi netto" sumber="D5 · BPS/KLHK · CSV · ha/tahun"
+<x-bagian id="deforestasi" data-dataset="D5" hidden nomor="3" ikon="kapak" judul="Seberapa cepat hutan hilang: deforestasi netto" sumber="D5 · BPS/KLHK · CSV · ha/tahun"
           sub="Deforestasi netto = hutan yang hilang dikurangi hutan yang tumbuh kembali, per periode dua tahun. Nilai negatif berarti reforestasi lebih besar.">
     <div class="grid gap-4 xl:grid-cols-2">
         <x-grafik id="chartDeforTren" judul="Deforestasi netto nasional per periode"

@@ -94,7 +94,7 @@
             ] as [$label, $nilai])
                 <div class="rounded-xl border border-garis bg-surface-2 px-4 py-3">
                     <div class="text-xs text-ink-3">{{ $label }}</div>
-                    <div class="mt-1 text-2xl font-bold tracking-tight">{{ $nilai > 0 ? '+' : '' }}{{ F::ringkas($nilai) }} <span class="text-sm font-medium text-ink-3">ha</span></div>
+                    <div class="mt-1 text-2xl font-bold">{{ $nilai > 0 ? '+' : '' }}{{ F::ringkas($nilai) }} <span class="text-sm font-medium text-ink-3">ha</span></div>
                 </div>
             @endforeach
         </div>

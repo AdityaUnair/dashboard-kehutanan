@@ -10,30 +10,30 @@
 @section('isi')
 @php
     $tabs = [
-        'ringkasan' => 'Ringkasan',
-        'per-data' => 'Per data',
-        'sebaran' => 'Peta sebaran',
-        'gabungan' => 'Analisis gabungan',
-        'integrasi' => 'Integrasi data',
+        'ringkasan' => ['Ringkasan', 'ringkasan'],
+        'per-data' => ['Per data', 'grafik'],
+        'sebaran' => ['Peta sebaran', 'peta'],
+        'gabungan' => ['Analisis gabungan', 'lapisan'],
+        'integrasi' => ['Integrasi data', 'basisdata'],
     ];
 @endphp
 
-<header class="sticky top-0 z-30 border-b border-garis bg-page/80 backdrop-blur-xl">
+<header class="sticky top-0 z-30 border-b border-garis bg-page/85 backdrop-blur-xl">
     <div class="mx-auto flex max-w-[1360px] items-center gap-4 px-4 py-3 md:px-6">
         <a href="#ringkasan" class="flex shrink-0 items-center gap-2.5" data-ke-tab="ringkasan">
-            <span class="grid size-8 place-items-center rounded-lg bg-brand text-sm font-bold text-white">K3</span>
+            <span class="grid size-9 place-items-center rounded-xl bg-brand text-[#f6f1e4] shadow-sm"><x-ikon nama="pohon" class="size-[18px]" /></span>
             <span class="hidden text-sm leading-tight font-semibold sm:block">Dashboard Kehutanan<span class="block text-[11px] font-normal text-ink-3">Data-level EAI · Kelompok 3</span></span>
         </a>
 
         <nav class="mx-auto hidden items-center gap-1 rounded-xl border border-garis bg-surface p-1 lg:flex" role="tablist" aria-label="Halaman dashboard">
-            @foreach ($tabs as $id => $label)
-                <button class="tab" role="tab" data-tab="{{ $id }}" aria-controls="panel-{{ $id }}" aria-selected="false">{{ $label }}</button>
+            @foreach ($tabs as $id => [$label, $ikon])
+                <button class="tab inline-flex items-center gap-1.5" role="tab" data-tab="{{ $id }}" aria-controls="panel-{{ $id }}" aria-selected="false"><x-ikon :nama="$ikon" class="size-4" />{{ $label }}</button>
             @endforeach
         </nav>
 
         <div class="ml-auto flex items-center gap-2 lg:ml-0">
-            <button id="gantiTema" type="button" class="grid size-9 place-items-center rounded-lg border border-garis bg-surface text-ink-2 hover:text-ink" aria-label="Ganti tema terang/gelap" title="Ganti tema">
-                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            <button id="gantiTema" type="button" class="grid size-9 place-items-center rounded-lg border border-garis bg-surface text-ink-2 hover:text-ink" aria-label="Ganti mode siang/malam" title="Ganti mode siang/malam">
+                <x-ikon nama="bulan" class="size-4 dark:hidden" /><x-ikon nama="matahari" class="hidden size-4 dark:block" />
             </button>
             <div class="hidden text-right text-xs leading-tight md:block">
                 <div class="font-medium text-ink">{{ auth()->user()->name }}</div>
@@ -48,8 +48,8 @@
 
     {{-- Tab versi layar kecil: bisa digeser --}}
     <nav class="flex gap-1 overflow-x-auto px-4 pb-2.5 lg:hidden" role="tablist" aria-label="Halaman dashboard">
-        @foreach ($tabs as $id => $label)
-            <button class="tab" role="tab" data-tab="{{ $id }}" aria-controls="panel-{{ $id }}" aria-selected="false">{{ $label }}</button>
+        @foreach ($tabs as $id => [$label, $ikon])
+            <button class="tab inline-flex items-center gap-1.5" role="tab" data-tab="{{ $id }}" aria-controls="panel-{{ $id }}" aria-selected="false"><x-ikon :nama="$ikon" class="size-4" />{{ $label }}</button>
         @endforeach
     </nav>
 </header>

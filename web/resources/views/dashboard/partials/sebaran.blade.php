@@ -39,11 +39,11 @@
 
     <div class="grid content-start gap-4">
         <div class="kartu">
-            <div class="text-[11px] font-medium tracking-wide text-ink-3 uppercase">Provinsi terpilih</div>
-            <div class="mt-1 text-lg font-semibold tracking-tight" id="detailNama">—</div>
+            <div class="text-[11px] font-medium text-ink-3 uppercase">Provinsi terpilih</div>
+            <div class="mt-1 text-lg font-semibold" id="detailNama">—</div>
             <div class="text-xs text-ink-3" id="detailWilayah"></div>
             <div class="mt-4 flex items-baseline gap-2">
-                <span class="text-[28px] leading-none font-semibold tracking-tight" id="detailNilai">—</span>
+                <span class="text-[28px] leading-none font-semibold" id="detailNilai">—</span>
                 <span class="text-sm text-ink-3" id="detailSatuan"></span>
             </div>
             <div class="mt-1.5 text-xs text-ink-2" id="detailPeringkat"></div>

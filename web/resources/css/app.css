@@ -10,37 +10,45 @@
  * Token warna. Nilainya berganti lewat atribut data-tema pada <html> (gelap = bawaan).
  * Warna data mengikuti palet yang lolos uji buta warna; hijau "brand" hanya untuk antarmuka.
  */
+/* Tema "hutan siang" (bawaan): kertas krem, hijau hutan, cokelat kayu */
 :root {
-    --page: #f4f5f2;
-    --surface: #ffffff;
-    --surface-2: #f7f8f5;
-    --garis: rgba(15, 20, 15, 0.09);
-    --ink: #161816;
-    --ink-2: #4f524d;
-    --ink-3: #82857e;
-    --brand: #1d6949;
-    --brand-teks: #1d6949;
-    --brand-lembut: rgba(29, 105, 73, 0.09);
-    --sorot: rgba(29, 105, 73, 0.06);
-    --peringatan: #b4552a;
-    --peringatan-lembut: rgba(236, 131, 90, 0.10);
+    --page: #f2eee3;
+    --surface: #fffdf8;
+    --surface-2: #f6f1e4;
+    --garis: rgba(74, 58, 30, 0.13);
+    --ink: #1e2a1f;
+    --ink-2: #4b5244;
+    --ink-3: #807a66;
+    --brand: #2f6b3f;
+    --brand-teks: #2a6338;
+    --brand-lembut: rgba(47, 107, 63, 0.10);
+    --kayu: #8b5a2b;
+    --kayu-lembut: rgba(139, 90, 43, 0.11);
+    --hutan-tua: #1e3a28;
+    --sorot: rgba(47, 107, 63, 0.05);
+    --peringatan: #a5461f;
+    --peringatan-lembut: rgba(192, 80, 46, 0.09);
     color-scheme: light;
 }
 
+/* Tema "hutan malam": hijau tua, bukan hitam */
 [data-tema='gelap'] {
-    --page: #0b0c0b;
-    --surface: #141514;
-    --surface-2: #1a1b1a;
-    --garis: rgba(255, 255, 255, 0.08);
-    --ink: #f0efec;
-    --ink-2: #c3c2b7;
-    --ink-3: #8b8a83;
-    --brand: #3fa772;
-    --brand-teks: #6fcf97;
-    --brand-lembut: rgba(63, 167, 114, 0.14);
-    --sorot: rgba(255, 255, 255, 0.035);
-    --peringatan: #f0a07a;
-    --peringatan-lembut: rgba(236, 131, 90, 0.10);
+    --page: #0e1a13;
+    --surface: #13241b;
+    --surface-2: #1a2f23;
+    --garis: rgba(214, 232, 200, 0.10);
+    --ink: #ecf0e4;
+    --ink-2: #c4ccb8;
+    --ink-3: #8f9b87;
+    --brand: #4caf7a;
+    --brand-teks: #8fd3a6;
+    --brand-lembut: rgba(76, 175, 122, 0.15);
+    --kayu: #c99a6b;
+    --kayu-lembut: rgba(201, 154, 107, 0.14);
+    --hutan-tua: #0b1610;
+    --sorot: rgba(214, 232, 200, 0.04);
+    --peringatan: #eb9a7c;
+    --peringatan-lembut: rgba(216, 102, 74, 0.13);
     color-scheme: dark;
 }
 
@@ -57,6 +65,9 @@
     --color-brand-teks: var(--brand-teks);
     --color-brand-lembut: var(--brand-lembut);
     --color-sorot: var(--sorot);
+    --color-kayu: var(--kayu);
+    --color-kayu-lembut: var(--kayu-lembut);
+    --color-hutan-tua: var(--hutan-tua);
     --color-peringatan: var(--peringatan);
     --color-peringatan-lembut: var(--peringatan-lembut);
 }
@@ -66,7 +77,7 @@
         @apply min-w-0 rounded-2xl border border-garis bg-surface p-5;
     }
     .kartu-judul {
-        @apply text-[14.5px] font-semibold tracking-tight text-ink;
+        @apply text-[14.5px] font-semibold text-ink;
     }
     .kartu-ket {
         @apply mt-0.5 mb-4 text-xs leading-relaxed text-ink-3;
@@ -77,13 +88,13 @@
 
     /* Pola insight: apa yang terlihat -> kenapa -> sambungan */
     .insight {
-        @apply grid gap-2.5 rounded-2xl border border-garis bg-surface p-5 text-[13.5px] leading-relaxed text-ink-2;
+        @apply grid gap-2.5 rounded-2xl border border-garis bg-surface p-5 text-[13.5px] leading-relaxed text-pretty text-ink-2;
     }
     .insight p {
         @apply grid gap-1 sm:grid-cols-[96px_1fr];
     }
     .insight b {
-        @apply pt-0.5 text-[10.5px] font-semibold tracking-wider text-brand-teks uppercase;
+        @apply pt-0.5 text-[10.5px] font-semibold text-brand-teks uppercase;
     }
     .insight.peringatan {
         @apply border-peringatan/30 bg-peringatan-lembut;
@@ -96,7 +107,7 @@
         @apply w-full border-collapse text-[12.5px];
     }
     .tabel-data th {
-        @apply border-b border-garis px-3 py-2 text-left text-[10.5px] font-semibold tracking-wider text-ink-3 uppercase;
+        @apply border-b border-garis px-3 py-2 text-left text-[10.5px] font-semibold text-ink-3 uppercase;
     }
     .tabel-data td {
         @apply border-b border-garis px-3 py-2 align-top text-ink-2;
@@ -141,7 +152,7 @@
         background-position: right 12px center;
     }
     .label-kontrol {
-        @apply mb-1.5 block text-[11px] font-medium tracking-wide text-ink-3 uppercase;
+        @apply mb-1.5 block text-[11px] font-medium text-ink-3 uppercase;
     }
 
     /* Peta petak (tile map) */

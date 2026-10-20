@@ -370,7 +370,7 @@ class DashboardService
             'D5' => [
                 'label' => 'Deforestasi netto', 'satuan' => 'ha/th', 'skala' => 'divergen', 'kaltaraDigabung' => true,
                 'nilai' => $perTahun(Deforestasi::all(), 'periode', 'total_ha'),
-                'catatan' => 'Merah = hutan berkurang, biru = reforestasi lebih besar (netto negatif).',
+                'catatan' => 'Merah karat = hutan berkurang, hijau = reforestasi lebih besar (netto negatif).',
             ],
             'D3' => [
                 'label' => 'Luas kebakaran hutan & lahan', 'satuan' => 'ha', 'skala' => 'sekuensial', 'kaltaraDigabung' => false,

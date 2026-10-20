@@ -12,24 +12,37 @@ const D = window.DATA;
 const html = document.documentElement;
 
 // ================================================================== palet per tema
+// Palet hutan. Hijau-cokelat & hijau-karat lolos uji buta warna sebagai pasangan; keempat warna data TIDAK pernah
+// tampil bersama di satu grafik (tren gabungan dipecah jadi 4 panel kecil).
 const TEMA = {
     terang: {
-        s1: '#2a78d6', s2: '#eb6834', s3: '#1baf7a', s4: '#eda100', naik: '#2a78d6', turun: '#e34948',
-        redup: '#dcdbd4', abu: '#a9a79e', permukaan: '#ffffff', tinta: '#161816', tinta2: '#4f524d', tinta3: '#82857e',
-        kisi: '#ecebe6', sumbu: '#c9c8c0', tooltip: '#161816', brand: '#1d6949',
-        sekuensial: ['#d6e7fc', '#94c0f2', '#4b93e6', '#256abf', '#123f7a'],
-        merah: ['#fbd5d4', '#f29c9b', '#e34948', '#a82b2a'], biru: ['#94c0f2', '#256abf'], nol: '#efeee9',
+        hijau: '#2f7d4f', api: '#c0502e', kayu: '#9c5a1f', amber: '#c58a14', naik: '#2f7d4f', turun: '#c0502e',
+        redup: '#e3dccb', abu: '#a3a598', permukaan: '#fffdf8', tinta: '#1e2a1f', tinta2: '#4b5244', tinta3: '#807a66',
+        kisi: '#ece5d5', sumbu: '#cfc6b0', tooltip: '#1e3a28',
+        ordinal: ['#7fb88a', '#4a9a63', '#2a6e45'],
+        ramp: {
+            hijau: ['#e2efdc', '#b3d4a8', '#79b07a', '#3f8552', '#1d5634'],
+            api: ['#fbe3d3', '#f2b089', '#e07a47', '#c0502e', '#86321a'],
+            kayu: ['#f1e5d3', '#dcbb90', '#bd8b56', '#94602d', '#5f3b1a'],
+        },
+        reforestasi: ['#9fcc9c', '#3f8552'], deforestasi: ['#f6d2bf', '#eaa07c', '#cf6a44', '#9c3d20'], nol: '#efe9da',
     },
     gelap: {
-        s1: '#3987e5', s2: '#d95926', s3: '#199e70', s4: '#c98500', naik: '#3987e5', turun: '#e66767',
-        redup: '#363734', abu: '#6f6e69', permukaan: '#141514', tinta: '#f0efec', tinta2: '#c3c2b7', tinta3: '#8b8a83',
-        kisi: '#242523', sumbu: '#383835', tooltip: '#2a2b29', brand: '#3fa772',
-        sekuensial: ['#16304d', '#1d4c84', '#2b6cc0', '#5b9ae6', '#a9cdf6'],
-        merah: ['#4a2120', '#7d302f', '#c84f4e', '#f2a3a3'], biru: ['#2b6cc0', '#a9cdf6'], nol: '#1d1e1d',
+        hijau: '#3a9e6a', api: '#d8664a', kayu: '#b97c44', amber: '#c9962a', naik: '#3a9e6a', turun: '#d8664a',
+        redup: '#2c3f33', abu: '#5f6b62', permukaan: '#13241b', tinta: '#ecf0e4', tinta2: '#c4ccb8', tinta3: '#8f9b87',
+        kisi: '#21352a', sumbu: '#34493c', tooltip: '#0b1610',
+        ordinal: ['#2a6e45', '#4f9e68', '#8fcb9b'],
+        ramp: {
+            hijau: ['#18301f', '#1f4a2e', '#2f6f45', '#56a06a', '#9fd3a8'],
+            api: ['#3a2018', '#64301f', '#9f4527', '#d8664a', '#f1a585'],
+            kayu: ['#2e2318', '#4d3925', '#7a5634', '#b07a47', '#dcb48a'],
+        },
+        reforestasi: ['#2f6f45', '#9fd3a8'], deforestasi: ['#4a2418', '#7d3824', '#b9553a', '#eb9a7c'], nol: '#1a2f23',
     },
 };
-let W = TEMA.gelap;
-const warnaData = () => ({ tutupan: W.s1, karhutla: W.s2, kayu: W.s3, deforestasi: W.s4 });
+let W = TEMA.terang;
+const warnaData = () => ({ tutupan: W.hijau, karhutla: W.api, kayu: W.kayu, deforestasi: W.amber });
+const RAMP_PETA = { D1: 'hijau', D2: 'hijau', D3: 'api', D4: 'kayu' };
 
 // ================================================================== format angka Indonesia
 const fmt = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
@@ -73,14 +86,7 @@ const labelTooltip = (satuan) => (c) => {
 };
 const gayaBatang = { borderRadius: 5, borderSkipped: 'start', maxBarThickness: 30, categoryPercentage: 0.78, barPercentage: 0.86 };
 const gayaTumpuk = () => ({ ...gayaBatang, borderColor: W.permukaan, borderWidth: { right: 2, top: 2 }, borderRadius: 0 });
-const gradien = (warna, kuat = 0.28) => (ctx) => {
-    const { chart } = ctx;
-    if (!chart.chartArea) return 'transparent';
-    const g = chart.ctx.createLinearGradient(0, chart.chartArea.top, 0, chart.chartArea.bottom);
-    g.addColorStop(0, warna + Math.round(kuat * 255).toString(16).padStart(2, '0'));
-    g.addColorStop(1, warna + '00');
-    return g;
-};
+const transparan = (warna, a = 0.14) => warna + Math.round(a * 255).toString(16).padStart(2, '0');
 
 // ================================================================== plugin label langsung (selektif) & garis acuan
 Chart.register(
@@ -159,10 +165,10 @@ const SPARK = { tutupan: 'tutupan', deforestasi: 'deforestasi', karhutla: 'karhu
 Object.keys(SPARK).forEach((k) => {
     DEF[`spark-${k}`] = () => {
         const deret = D.deret[k];
-        const warna = SPARK[k] ? warnaData()[SPARK[k]] : W.abu;
+        const warna = SPARK[k] ? warnaData()[SPARK[k]] : W.hijau;
         return {
             type: 'line',
-            data: { labels: Object.keys(deret), datasets: [{ data: Object.values(deret), borderColor: warna, backgroundColor: gradien(warna, 0.32), fill: true, tension: 0, pointRadius: 0, pointHoverRadius: 3, borderWidth: 1.75 }] },
+            data: { labels: Object.keys(deret), datasets: [{ data: Object.values(deret), borderColor: warna, backgroundColor: transparan(warna), fill: true, tension: 0, pointRadius: 0, pointHoverRadius: 3, borderWidth: 1.75 }] },
             options: {
                 animation: false,
                 layout: { padding: 2 },
@@ -175,28 +181,37 @@ Object.keys(SPARK).forEach((k) => {
     };
 });
 
-// ---- ringkasan: indeks gabungan
-DEF.chartIndeks = () => {
-    const ix = D.indeks;
-    const warna = Object.values(warnaData());
-    return {
-        type: 'line',
-        data: {
-            labels: ix.tahun,
-            datasets: Object.entries(ix.deret).map(([label, data], i) => ({ label, data, borderColor: warna[i], backgroundColor: warna[i], tension: 0, spanGaps: false })),
-        },
-        options: {
-            layout: { padding: { right: 128 } },
-            interaction: { mode: 'index', intersect: false },
-            scales: { y: { beginAtZero: true, grace: '5%', title: { display: true, text: 'indeks (2018 = 100)', color: W.tinta3 } }, x: tanpaKisi },
-            plugins: {
-                tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${c.parsed.y === null ? '–' : fmt.format(c.parsed.y)}` } },
-                garisAcuan: { nilai: 100 },
-                labelUjungGaris: { aktif: true, teks: (ds, v) => `${ds.label.replace(/ \(D\d\)/, '')} ${fmt.format(v)}` },
+// ---- ringkasan: indeks gabungan sebagai 4 panel kecil dengan sumbu Y yang sama
+const INDEKS = { tutupan: 'Tutupan hutan (D2)', karhutla: 'Karhutla (D3)', kayu: 'Produksi kayu (D4)', deforestasi: 'Deforestasi netto (D5)' };
+const maksIndeks = Math.max(...Object.values(D.indeks.deret).flat().filter((v) => v !== null));
+Object.entries(INDEKS).forEach(([k, label]) => {
+    DEF[`indeks-${k}`] = () => {
+        const warna = warnaData()[k];
+        return {
+            type: 'line',
+            data: { labels: D.indeks.tahun, datasets: [{ label, data: D.indeks.deret[label], borderColor: warna, backgroundColor: transparan(warna, 0.12), fill: 'start', pointBackgroundColor: warna, tension: 0, spanGaps: false }] },
+            options: {
+                layout: { padding: { right: 34, top: 6 } },
+                scales: {
+                    y: { min: 0, max: Math.ceil(maksIndeks / 50) * 50, ticks: { stepSize: 100, font: { size: 10 } } },
+                    x: { ...tanpaKisi, ticks: { font: { size: 10 }, callback(v) { const t = String(this.getLabelForValue(v)); return `'${t.slice(2)}`; } } },
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { mode: 'index', intersect: false, callbacks: { label: (c) => ` indeks ${c.parsed.y === null ? '–' : fmt.format(c.parsed.y)}` } },
+                    garisAcuan: { nilai: 100 },
+                    labelUjungGaris: { aktif: true, teks: (_d, v) => fmt.format(v) },
+                },
             },
-        },
+        };
     };
-};
+});
+document.querySelector('[data-tabel-indeks]').addEventListener('toggle', (e) => {
+    if (!e.target.open) return;
+    const kepala = Object.keys(D.indeks.deret).map((l) => `<th class="angka">${l}</th>`).join('');
+    const baris = D.indeks.tahun.map((t, i) => `<tr><td>${t}</td>${Object.values(D.indeks.deret).map((d) => `<td class="angka">${d[i] === null ? '–' : fmt.format(d[i])}</td>`).join('')}</tr>`);
+    e.target.querySelector('.isi').innerHTML = `<table class="tabel-data"><thead><tr><th>Tahun</th>${kepala}</tr></thead><tbody>${baris.join('')}</tbody></table>`;
+});
 
 // ---- D1 kawasan
 DEF.chartKawasanProvinsi = () => {
@@ -206,9 +221,9 @@ DEF.chartKawasanProvinsi = () => {
         data: {
             labels: kw.provinsi.map((p) => p.nama),
             datasets: [
-                { label: 'Lindung', data: kw.provinsi.map((p) => p.lindung), backgroundColor: W.s1, ...gayaTumpuk() },
-                { label: 'Konservasi', data: kw.provinsi.map((p) => p.konservasi), backgroundColor: W.s2, ...gayaTumpuk() },
-                { label: 'Produksi', data: kw.provinsi.map((p) => p.produksi), backgroundColor: W.s3, ...gayaTumpuk(), borderRadius: { topRight: 5, bottomRight: 5 } },
+                { label: 'Lindung', data: kw.provinsi.map((p) => p.lindung), backgroundColor: W.ordinal[1], ...gayaTumpuk() },
+                { label: 'Konservasi', data: kw.provinsi.map((p) => p.konservasi), backgroundColor: W.ordinal[2], ...gayaTumpuk() },
+                { label: 'Produksi', data: kw.provinsi.map((p) => p.produksi), backgroundColor: W.ordinal[0], ...gayaTumpuk(), borderRadius: { topRight: 5, bottomRight: 5 } },
             ],
         },
         options: {
@@ -223,7 +238,7 @@ DEF.chartKawasanFungsi = () => {
     const total = fungsi.reduce((s, [, v]) => s + v, 0);
     return {
         type: 'bar',
-        data: { labels: fungsi.map(([k]) => k), datasets: [{ label: 'Luas (ha)', data: fungsi.map(([, v]) => v), backgroundColor: W.s1, ...gayaBatang }] },
+        data: { labels: fungsi.map(([k]) => k), datasets: [{ label: 'Luas (ha)', data: fungsi.map(([, v]) => v), backgroundColor: W.hijau, ...gayaBatang }] },
         options: {
             indexAxis: 'y',
             layout: { padding: { right: 112 } },
@@ -244,7 +259,7 @@ DEF.chartTutupanTren = () => {
     const warna = warnaData().tutupan;
     return {
         type: 'line',
-        data: { labels: tt.tahun, datasets: [{ label: 'Tutupan hutan (ha)', data: tt.tahun.map((t) => perTahun[t]?.hutan ?? null), borderColor: warna, backgroundColor: gradien(warna), fill: 'start', spanGaps: false, tension: 0, pointBackgroundColor: warna }] },
+        data: { labels: tt.tahun, datasets: [{ label: 'Tutupan hutan (ha)', data: tt.tahun.map((t) => perTahun[t]?.hutan ?? null), borderColor: warna, backgroundColor: transparan(warna), fill: 'start', spanGaps: false, tension: 0, pointBackgroundColor: warna }] },
         options: {
             layout: { padding: { right: 72, top: 8 } },
             scales: { y: { ...sumbuRingkas(), grace: '25%' }, x: tanpaKisi },
@@ -278,7 +293,7 @@ DEF.chartDeforTren = () => {
         data: {
             labels: df.nasional.map((r) => r.periode),
             datasets: [
-                { label: 'Di dalam kawasan hutan', data: df.nasional.map((r) => r.dalam), backgroundColor: W.s4, ...gayaTumpuk(), borderWidth: { top: 2 } },
+                { label: 'Di dalam kawasan hutan', data: df.nasional.map((r) => r.dalam), backgroundColor: W.amber, ...gayaTumpuk(), borderWidth: { top: 2 } },
                 { label: 'Di luar kawasan (APL)', data: df.nasional.map((r) => r.luar), backgroundColor: W.redup, ...gayaTumpuk(), borderWidth: { top: 2 }, borderRadius: { topLeft: 5, topRight: 5 } },
             ],
         },
@@ -293,7 +308,7 @@ DEF.chartDeforProvinsi = () => {
     const top = D.deforestasi.top;
     return {
         type: 'bar',
-        data: { labels: top.map((p) => p.nama), datasets: [{ label: 'Deforestasi netto (ha)', data: top.map((p) => p.total), backgroundColor: W.s4, ...gayaBatang }] },
+        data: { labels: top.map((p) => p.nama), datasets: [{ label: 'Deforestasi netto (ha)', data: top.map((p) => p.total), backgroundColor: W.amber, ...gayaBatang }] },
         options: {
             indexAxis: 'y',
             layout: { padding: { right: 56 } },
@@ -359,7 +374,7 @@ DEF.chartKawasanVsTutupan = () => {
 // ---- G3 benang merah (gelembung)
 DEF.chartBenangMerah = () => {
     const bm = D.benangMerah;
-    const warnaKelompok = { Sumatera: W.s1, Kalimantan: W.s2, 'Wilayah lain': W.abu };
+    const warnaKelompok = { Sumatera: W.hijau, Kalimantan: W.kayu, 'Wilayah lain': W.abu };
     const maks = Math.max(...bm.titik.map((t) => t.kayu));
     return {
         type: 'bubble',
@@ -409,7 +424,7 @@ DEF.chartDetailProvinsi = () => {
     const ds = D.sebaran.dataset[peta.data];
     const label = Object.keys(ds.nilai);
     const nilai = label.map((t) => ds.nilai[t][peta.kode] ?? null);
-    const warna = W.s1;
+    const warna = warnaKuat();
     return {
         type: 'bar',
         data: { labels: label, datasets: [{ label: ds.satuan, data: nilai, backgroundColor: label.map((t) => (t === peta.tahun ? warna : W.redup)), ...gayaBatang, borderSkipped: false }] },
@@ -483,6 +498,8 @@ pilihData.addEventListener('change', () => tampilkanData(pilihData.value));
 
 // ================================================================== peta sebaran (tile map)
 const peta = { data: null, tahun: null, kode: null };
+const rampAktif = () => W.ramp[RAMP_PETA[peta.data]] ?? W.ramp.hijau;
+const warnaKuat = () => (peta.data === 'D5' ? W.turun : rampAktif()[3]);
 const elPeta = document.getElementById('peta');
 const elData = document.getElementById('sebaranData');
 const elTahun = document.getElementById('sebaranTahun');
@@ -504,14 +521,14 @@ function skalaWarna(ds, nilaiTahun) {
         const batasNeg = neg.length ? kuantil(neg, 0.5) : 0;
         const warna = (v) => {
             if (v === 0) return W.nol;
-            if (v < 0) return Math.abs(v) <= batasNeg ? W.biru[0] : W.biru[1];
+            if (v < 0) return Math.abs(v) <= batasNeg ? W.reforestasi[0] : W.reforestasi[1];
             const i = batasPos.findIndex((b) => v <= b);
-            return W.merah[i === -1 ? 3 : i];
+            return W.deforestasi[i === -1 ? 3 : i];
         };
         const legenda = [
-            ...(neg.length ? [[W.biru[1], `≤ −${ringkas(batasNeg)}`], [W.biru[0], 'reforestasi']] : []),
-            [W.merah[0], `≤ ${ringkas(batasPos[0])}`], [W.merah[1], `≤ ${ringkas(batasPos[1])}`],
-            [W.merah[2], `≤ ${ringkas(batasPos[2])}`], [W.merah[3], `> ${ringkas(batasPos[2])}`],
+            ...(neg.length ? [[W.reforestasi[1], `≤ −${ringkas(batasNeg)}`], [W.reforestasi[0], 'reforestasi']] : []),
+            [W.deforestasi[0], `≤ ${ringkas(batasPos[0])}`], [W.deforestasi[1], `≤ ${ringkas(batasPos[1])}`],
+            [W.deforestasi[2], `≤ ${ringkas(batasPos[2])}`], [W.deforestasi[3], `> ${ringkas(batasPos[2])}`],
         ];
         return { warna, legenda };
     }
@@ -521,12 +538,12 @@ function skalaWarna(ds, nilaiTahun) {
     const warna = (v) => {
         if (v <= 0) return W.nol;
         const i = batas.findIndex((b) => v <= b);
-        return W.sekuensial[i === -1 ? 4 : i];
+        return rampAktif()[i === -1 ? 4 : i];
     };
     const legenda = [
         ...(vals.some((v) => v <= 0) ? [[W.nol, '0']] : []),
-        [W.sekuensial[0], `≤ ${fmtBatas(batas[0])}`], [W.sekuensial[1], `≤ ${fmtBatas(batas[1])}`], [W.sekuensial[2], `≤ ${fmtBatas(batas[2])}`],
-        [W.sekuensial[3], `≤ ${fmtBatas(batas[3])}`], [W.sekuensial[4], `> ${fmtBatas(batas[3])}`],
+        [rampAktif()[0], `≤ ${fmtBatas(batas[0])}`], [rampAktif()[1], `≤ ${fmtBatas(batas[1])}`], [rampAktif()[2], `≤ ${fmtBatas(batas[2])}`],
+        [rampAktif()[3], `≤ ${fmtBatas(batas[3])}`], [rampAktif()[4], `> ${fmtBatas(batas[3])}`],
     ];
     return { warna, legenda };
 }
@@ -609,7 +626,7 @@ function gambarPeta() {
         const nama = D.sebaran.provinsi.find((p) => p.kode === k)?.nama ?? k;
         return `<li class="text-[12.5px]"><div class="flex justify-between gap-2"><span class="text-ink"><span class="mr-1.5 text-ink-3">${i + 1}</span>${nama}</span>
             <span class="font-medium tabular-nums text-ink-2">${satuanTeks(nilai, ds.satuan)}</span></div>
-            <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2"><div class="h-full rounded-full" style="width:${Math.max(2, (nilai / maks) * 100)}%;background:${W.s1}"></div></div></li>`;
+            <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2"><div class="h-full rounded-full" style="width:${Math.max(2, (nilai / maks) * 100)}%;background:${warnaKuat()}"></div></div></li>`;
     }).join('');
 
     bangunUlang('chartDetailProvinsi');

@@ -1,6 +1,6 @@
 @use('App\Support\Format', 'F')
 
-<x-bagian id="karhutla" data-dataset="D3" hidden nomor="4" judul="Penggerus 1: kebakaran hutan dan lahan" sumber="D3 · SiPongi KLHK · XLSX · ha"
+<x-bagian id="karhutla" data-dataset="D3" hidden nomor="4" ikon="api" judul="Penggerus 1: kebakaran hutan dan lahan" sumber="D3 · SiPongi KLHK · XLSX · ha"
           sub="Luas indikatif kebakaran hutan dan lahan per provinsi. Data 2026 belum dipakai karena baru tercatat sampai Juli.">
     <div class="grid gap-4 xl:grid-cols-2">
         <x-grafik id="chartKarhutlaTren" judul="Luas karhutla nasional per tahun"
