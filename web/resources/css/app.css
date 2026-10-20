@@ -90,11 +90,12 @@
     .insight {
         @apply grid gap-2.5 rounded-2xl border border-garis bg-surface p-5 text-[13.5px] leading-relaxed text-pretty text-ink-2;
     }
+    /* Label (b) di kolom kiri, isi paragraf di kanan; posisi absolut agar <strong>/<em> di dalam isi tidak memecah baris */
     .insight p {
-        @apply grid gap-1 sm:grid-cols-[96px_1fr];
+        @apply relative sm:pl-[104px];
     }
     .insight b {
-        @apply pt-0.5 text-[10.5px] font-semibold text-brand-teks uppercase;
+        @apply block pt-0.5 text-[10.5px] font-semibold text-brand-teks uppercase sm:absolute sm:top-0 sm:left-0 sm:w-24;
     }
     .insight.peringatan {
         @apply border-peringatan/30 bg-peringatan-lembut;
