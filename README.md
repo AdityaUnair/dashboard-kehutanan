@@ -53,6 +53,20 @@ Script setup membuat 3 database dari `sql/schema.sql`, memasang library Python d
 mentah di `data/raw`, lalu menyiapkan Laravel (composer, npm build, key, migrasi, akun demo). Aman dijalankan ulang.
 Semua data dibaca dari file di `data/raw` (tidak perlu koneksi internet).
 
+### Windows
+
+1. Buka **XAMPP Control Panel**, klik **Start** pada MySQL.
+2. Buka **PowerShell** di folder repo, lalu:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File setup.ps1
+   cd web; php artisan serve          # buka http://localhost:8000
+   ```
+3. Perintah Python di Windows memakai `..\.venv\Scripts\python.exe` (dari folder `etl`), misalnya
+   `..\.venv\Scripts\python.exe run_etl.py`.
+
+Replikasi **Master-Slave** asli (`scripts/replika.sh`) hanya untuk macOS/Linux. Di Windows replikasi otomatis berjalan dalam
+**mode script** (`etl/replicate.py`), dan semua demo tetap bisa dilakukan.
+
 ### Akun
 
 Halaman login menampilkan akun demo dengan tombol **"Masuk sebagai …"** yang mengisi email & password otomatis
@@ -97,6 +111,16 @@ slave. Website membaca data dari slave (`DATA_DB_PORT=3307`, `DATA_DB_DATABASE=k
 script); tabel login/sesi Laravel tetap di server utama karena slave hanya boleh dibaca. Bila slave mati, dashboard otomatis memakai replika cadangan dan menandainya di
 bagian Integrasi. Setelah menjalankan ulang `sql/schema.sql`, jalankan lagi `scripts/replika.sh setup`.
 
+### Demo untuk presentasi
+
+Naskah lengkap (langkah, kalimat yang diucapkan, antisipasi pertanyaan): **[`docs/NASKAH_DEMO.md`](docs/NASKAH_DEMO.md)**.
+
+| Demo | macOS / Linux | Windows (PowerShell) |
+|---|---|---|
+| Transformation | `scripts/demo_transformasi.sh` | `powershell -ExecutionPolicy Bypass -File scripts\demo_transformasi.ps1` |
+| Replication + Synchronization | `cd etl && python3 sync.py --simulasi D4` | `cd etl; ..\.venv\Scripts\python.exe sync.py --simulasi D4` |
+| Status Master-Slave | `scripts/replika.sh status` | – (Windows memakai mode script) |
+
 ### Sinkronisasi (dan demonya untuk presentasi)
 
 ```bash
@@ -117,7 +141,9 @@ Pada mode Master-Slave perubahan di master langsung tersalin ke slave tanpa menj
 dashboard-kehutanan/
 ├── data/raw/{xls,xlsx,csv,json}/  file asli dari sumber (jangan diedit)
 ├── etl/                        pipeline Python
-├── scripts/replika.sh          server slave untuk replikasi Master-Slave (opsional)
+├── scripts/replika.sh          server slave untuk replikasi Master-Slave (opsional, macOS/Linux)
+├── scripts/demo_transformasi.* demo transformasi untuk presentasi (.sh macOS/Linux, .ps1 Windows)
+├── docs/NASKAH_DEMO.md         naskah demo presentasi
 ├── setup.sh, setup.ps1         setup satu perintah (macOS/Linux, Windows)
 ├── sql/schema.sql              skema 3 database
 └── web/                        Laravel
