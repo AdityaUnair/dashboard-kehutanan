@@ -12,7 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Saat dibuka lewat tunnel (VS Code port forwarding / devtunnels), percayai header X-Forwarded-*
+        // agar URL aset & form ikut https dan tidak diblokir browser sebagai mixed content.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
