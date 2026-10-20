@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 /** D3 - Luas kebakaran hutan & lahan per provinsi per tahun (ha). Sumber: SiPongi KLHK (XLSX). */
 class Karhutla extends Model
 {
+    protected $connection = 'data';
+
     protected $table = 'fakta_karhutla';
 
     public $timestamps = false;

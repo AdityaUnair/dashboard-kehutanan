@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 /** D2 - Luas tutupan lahan hutan & non-hutan per provinsi per tahun (ha). Sumber: BPS/KLHK (CSV). */
 class TutupanLahan extends Model
 {
+    protected $connection = 'data';
+
     protected $table = 'fakta_tutupan_lahan';
 
     public $timestamps = false;

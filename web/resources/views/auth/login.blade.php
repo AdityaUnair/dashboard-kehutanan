@@ -58,9 +58,36 @@
                 <input type="checkbox" name="ingat" value="1" class="size-4 rounded accent-[var(--brand)]"> Ingat saya
             </label>
 
-            <button type="submit" class="mt-6 w-full rounded-xl bg-brand py-2.5 text-sm font-semibold text-white transition hover:brightness-110">
+            <button id="tombolMasuk" type="submit" class="mt-6 w-full rounded-xl bg-brand py-2.5 text-sm font-semibold text-white transition hover:brightness-110">
                 Masuk
             </button>
+
+            @if ($demo)
+                {{-- Akun demo: klik untuk mengisi email & password otomatis --}}
+                <div class="mt-7 border-t border-garis pt-5">
+                    <div class="text-xs font-medium text-ink-2">Akun demo · klik untuk mengisi otomatis</div>
+                    <div class="mt-2.5 grid gap-2">
+                        @foreach ($demo as $a)
+                            <button type="button" data-email="{{ $a['email'] }}" data-password="{{ $a['password'] }}"
+                                    class="isi-demo flex w-full min-w-0 items-center gap-3 rounded-xl border border-garis bg-surface-2 px-3 py-2.5 text-left transition hover:border-brand/40 hover:bg-sorot">
+                                <span class="grid size-8 shrink-0 place-items-center rounded-full bg-brand-lembut text-brand-teks"><x-ikon nama="akun" class="size-4" /></span>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block text-[13px] font-medium text-ink">Masuk sebagai {{ $a['name'] }}</span>
+                                    <span class="block truncate text-[11.5px] text-ink-3">{{ $a['email'] }} · {{ $a['ket'] }}</span>
+                                </span>
+                                <span class="{{ $a['peran'] === 'admin' ? 'pil-ok' : 'lencana' }}">{{ $a['peran'] }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+                <script>
+                    document.querySelectorAll('.isi-demo').forEach((b) => b.addEventListener('click', () => {
+                        document.getElementById('email').value = b.dataset.email;
+                        document.getElementById('password').value = b.dataset.password;
+                        document.getElementById('tombolMasuk').focus();
+                    }));
+                </script>
+            @endif
         </form>
     </section>
 </div>

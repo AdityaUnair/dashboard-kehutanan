@@ -84,6 +84,23 @@ return [
             ]) : [],
         ],
 
+        // Data dashboard (grafik & log integrasi). Mode sederhana: sama dengan koneksi utama (port 3306).
+        // Mode Master-Slave: DATA_DB_PORT=3307 = server slave (diatur otomatis oleh scripts/replika.sh).
+        // Tabel milik Laravel sendiri (users, sessions, cache) tetap di koneksi utama, karena slave hanya boleh dibaca.
+        'data' => [
+            'driver' => 'mariadb',
+            'host' => env('DATA_DB_HOST') ?: env('DB_HOST', '127.0.0.1'),
+            'port' => env('DATA_DB_PORT') ?: env('DB_PORT', '3306'),
+            'database' => env('DATA_DB_DATABASE') ?: env('DB_DATABASE', 'kehutanan_dashboard'),
+            'username' => env('DATA_DB_USERNAME') ?: env('DB_USERNAME', 'root'),
+            'password' => env('DATA_DB_PASSWORD') ?? env('DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DB_URL'),

@@ -8,13 +8,15 @@ use Illuminate\Database\Seeder;
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Akun demo untuk login dashboard. Password otomatis di-hash (bcrypt) oleh cast 'hashed' di model User.
+     * Akun demo (lihat config/akun_demo.php). Password otomatis di-hash (bcrypt) oleh cast 'hashed' di model User.
      */
     public function run(): void
     {
-        User::updateOrCreate(
-            ['email' => 'admin@kehutanan.test'],
-            ['name' => 'Admin Kelompok 3', 'password' => 'hutan2026'],
-        );
+        foreach (config('akun_demo') as $akun) {
+            User::updateOrCreate(
+                ['email' => $akun['email']],
+                ['name' => $akun['name'], 'password' => $akun['password'], 'peran' => $akun['peran']],
+            );
+        }
     }
 }

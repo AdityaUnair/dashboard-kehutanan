@@ -36,6 +36,9 @@
         @case('pohon')
             <path d="M12 2 6 10h3l-4 6h14l-4-6h3Z"/><path d="M12 16v6"/>
             @break
+        @case('akun')
+            <circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
+            @break
         @case('bulan')
             <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
             @break

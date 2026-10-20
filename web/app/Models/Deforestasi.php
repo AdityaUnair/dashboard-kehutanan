@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 /** D5 - Deforestasi netto per provinsi per periode dua tahun (ha/th). Sumber: BPS/KLHK (CSV). */
 class Deforestasi extends Model
 {
+    protected $connection = 'data';
+
     protected $table = 'fakta_deforestasi';
 
     public $timestamps = false;

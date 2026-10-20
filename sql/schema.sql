@@ -6,7 +6,11 @@
 --   3. kehutanan_dashboard : REPLIKA dari master, satu-satunya DB yang dibaca website
 --
 -- Jalankan ulang file ini = reset total (semua tabel dibuat ulang).
+-- Mode Master-Slave: setelah reset, jalankan ulang `scripts/replika.sh setup` agar slave mengambil salinan baru.
 -- =====================================================================
+
+-- Perintah reset ini tidak dicatat di binary log, supaya tidak ikut dijalankan oleh server slave
+SET sql_log_bin = 0;
 
 DROP DATABASE IF EXISTS kehutanan_staging;
 DROP DATABASE IF EXISTS kehutanan_master;
@@ -162,6 +166,22 @@ CREATE TABLE etl_log (
     waktu         DATETIME    NOT NULL
 );
 
+-- Catatan replikasi (dua mode, lihat etl/replicate.py). Ditulis di master agar ikut tersalin ke replika.
+CREATE TABLE replication_log (
+    id               BIGINT AUTO_INCREMENT PRIMARY KEY,
+    mode             VARCHAR(20) NOT NULL,  -- master-slave / script
+    tabel            VARCHAR(40) NOT NULL,
+    baris_master     INT NOT NULL,
+    baris_replika    INT,
+    baris_disisipkan INT,                   -- hanya mode script; di mode master-slave penyalinan dilakukan MariaDB
+    baris_diperbarui INT,
+    baris_dihapus    INT,
+    checksum_master  BIGINT,
+    checksum_replika BIGINT,
+    status           VARCHAR(10) NOT NULL,
+    waktu            DATETIME NOT NULL
+);
+
 CREATE TABLE sync_log (
     id            BIGINT AUTO_INCREMENT PRIMARY KEY,
     dataset       VARCHAR(10) NOT NULL,
@@ -189,17 +209,4 @@ CREATE TABLE fakta_produksi_kayu LIKE kehutanan_master.fakta_produksi_kayu;
 CREATE TABLE fakta_deforestasi   LIKE kehutanan_master.fakta_deforestasi;
 CREATE TABLE etl_log             LIKE kehutanan_master.etl_log;
 CREATE TABLE sync_log            LIKE kehutanan_master.sync_log;
-
--- Bukti replikasi: dicatat di sisi replika setiap kali data disalin
-CREATE TABLE replication_log (
-    id               BIGINT AUTO_INCREMENT PRIMARY KEY,
-    tabel            VARCHAR(40) NOT NULL,
-    baris_master     INT NOT NULL,
-    baris_disisipkan INT NOT NULL,
-    baris_diperbarui INT NOT NULL,
-    baris_dihapus    INT NOT NULL,
-    checksum_master  BIGINT,
-    checksum_replika BIGINT,
-    status           VARCHAR(10) NOT NULL,
-    waktu            DATETIME NOT NULL
-);
+CREATE TABLE replication_log     LIKE kehutanan_master.replication_log;

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 /** Referensi 34 provinsi (kode BPS). */
 class Provinsi extends Model
 {
+    protected $connection = 'data';
+
     protected $table = 'ref_provinsi';
 
     public $timestamps = false;

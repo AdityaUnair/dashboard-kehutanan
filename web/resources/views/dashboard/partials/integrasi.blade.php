@@ -47,17 +47,41 @@
     </div>
 
     <div class="grid gap-3 xl:grid-cols-3">
+        @php
+            $slave = $integrasi['slave'];
+            $modeLog = $integrasi['replikasi']->last()?->mode;
+        @endphp
         <div class="kartu overflow-x-auto">
-            <div class="kartu-judul">Replikasi master → dashboard</div>
-            <div class="kartu-ket">Terakhir: {{ $integrasi['replikasi']->first()?->waktu }} · checksum sama = replika identik dengan master · + disisipkan, ~ diperbarui, − dihapus</div>
+            <div class="kartu-judul">Replikasi master → replika</div>
+            {{-- mode yang sedang aktif: replikasi asli MariaDB (Master-Slave) atau simulasi lewat script --}}
+            @if ($slave)
+                <div class="mt-2 rounded-xl bg-brand-lembut p-2.5 text-[12px] leading-relaxed text-ink-2">
+                    <b class="text-brand-teks">Master-Slave MariaDB</b> · slave {{ $slave['slave'] }} membaca binary log master {{ $slave['master'] }}<br>
+                    <span class="{{ $slave['io'] ? 'pil-ok' : 'pil-cek' }}">{{ $slave['io'] ? '✓' : '!' }} IO</span>
+                    <span class="{{ $slave['sql'] ? 'pil-ok' : 'pil-cek' }}">{{ $slave['sql'] ? '✓' : '!' }} SQL</span>
+                    tertinggal {{ $slave['tertinggal'] ?? '–' }} detik · posisi {{ $slave['berkas'] }}
+                    @if ($slave['galat'])<br><span class="text-peringatan">{{ $slave['galat'] }}</span>@endif
+                </div>
+            @elseif ($integrasi['cadangan'])
+                <div class="mt-2 rounded-xl bg-peringatan-lembut p-2.5 text-[12px] leading-relaxed text-ink-2">
+                    <b class="text-peringatan">Server slave tidak aktif.</b> Dashboard memakai replika cadangan (mode script). Jalankan <code>scripts/replika.sh start</code>.
+                </div>
+            @else
+                <div class="mt-2 rounded-xl bg-surface-2 p-2.5 text-[12px] leading-relaxed text-ink-2">
+                    <b class="text-ink">Mode script</b> · simulasi Master-Slave di satu server: <code>etl/replicate.py</code> menyalin perubahan master ke replika.
+                    Replikasi asli MariaDB (server kedua) bisa dinyalakan dengan <code>scripts/replika.sh</code>.
+                </div>
+            @endif
+            <div class="kartu-ket mt-2">Pemeriksaan terakhir: {{ $integrasi['replikasi']->last()?->waktu }} ({{ $modeLog }}) · checksum sama = replika identik dengan master
+                @if ($modeLog === 'script') · + disisipkan, ~ diperbarui, − dihapus @endif</div>
             <table class="tabel-data">
-                <thead><tr><th>Tabel</th><th class="angka">Baris</th><th class="angka whitespace-nowrap">+ / ~ / −</th><th>Status</th></tr></thead>
+                <thead><tr><th>Tabel</th><th class="angka">Baris</th><th class="angka whitespace-nowrap">{{ $modeLog === 'script' ? '+ / ~ / −' : 'Disalin oleh' }}</th><th>Status</th></tr></thead>
                 <tbody>
                 @foreach ($integrasi['replikasi'] as $r)
                     <tr>
                         <td class="font-mono text-[11.5px] text-ink">{{ $r->tabel }}</td>
                         <td class="angka">{{ $r->baris_master }}</td>
-                        <td class="angka whitespace-nowrap">{{ $r->baris_disisipkan }} / {{ $r->baris_diperbarui }} / {{ $r->baris_dihapus }}</td>
+                        <td class="angka whitespace-nowrap">{{ $r->mode === 'script' ? "$r->baris_disisipkan / $r->baris_diperbarui / $r->baris_dihapus" : 'MariaDB' }}</td>
                         <td><span class="{{ $r->status === 'SINKRON' ? 'pil-ok' : 'pil-cek' }}">{{ $r->status === 'SINKRON' ? '✓' : '!' }} {{ $r->status }}</span></td>
                     </tr>
                 @endforeach

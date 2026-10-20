@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -9,7 +10,11 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
-        return view('auth.login');
+        // akun demo yang masih ada di database, untuk tombol "Masuk sebagai ..."
+        $ada = User::whereIn('email', array_column(config('akun_demo'), 'email'))->pluck('email')->all();
+        $demo = array_values(array_filter(config('akun_demo'), fn ($a) => in_array($a['email'], $ada)));
+
+        return view('auth.login', ['demo' => $demo]);
     }
 
     public function login(Request $request)

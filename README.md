@@ -29,37 +29,65 @@ Link sumber dan catatan tiap file: [`data/raw/SUMBER_DATA.md`](data/raw/SUMBER_D
 | Teknik Data-level EAI | File | Bukti di dashboard |
 |---|---|---|
 | Transformation | `etl/transform_load.py` (aturan T1–T9), `etl/angka.py`, `etl/provinsi.py` | Log ETL tahap `transform-load` + cek total |
-| Replication | `etl/replicate.py` (inkremental + checksum) | Tabel "Replikasi master → dashboard" |
+| Replication | Master-Slave MariaDB asli (`scripts/replika.sh`, opsional) atau simulasi `etl/replicate.py` (inkremental + checksum) | Kartu "Replikasi master → replika" (mode aktif, status slave, checksum) |
 
 ## Menjalankan
 
-Prasyarat: XAMPP (MariaDB menyala), Python 3.10+, PHP 8.2+, Composer, Node.js 20+.
+### Cara cepat (satu perintah)
 
-Stack: **Python** (ETL) · **MariaDB** (XAMPP) · **Laravel 13** (MVC + Blade components) · **Tailwind CSS 4** · **Chart.js 4**, dibangun dengan **Vite**.
+Prasyarat: **XAMPP** (MySQL/MariaDB menyala), **Python 3.10+**, **PHP 8.2+**, **Composer**, **Node.js 20+**.
 
 ```bash
-# 1. Konfigurasi
-cp web/.env.example web/.env
-
-# 2. Database
-/Applications/XAMPP/xamppfiles/bin/mysql -h 127.0.0.1 -u root < sql/schema.sql
-
-# 3. Pipeline ETL
-pip install -r etl/requirements.txt
-cd etl
-cd ..
-
-# 4. Website
-cd web
-composer install
-npm install
-npm run build                     # kompilasi Tailwind + Chart.js ke public/build
-php artisan key:generate
-php artisan migrate --seed        # tabel users/sessions + akun demo
-php artisan serve                 # buka http://localhost:8000
+git clone https://github.com/AdityaUnair/dashboard-kehutanan.git
+cd dashboard-kehutanan
+./setup.sh                                          # macOS / Linux
+# powershell -ExecutionPolicy Bypass -File setup.ps1   (Windows)
+cd web && php artisan serve                         # buka http://localhost:8000
 ```
 
-Akun demo (hanya untuk lokal): lihat `web/database/seeders/DatabaseSeeder.php`.
+Script setup membuat 3 database dari `sql/schema.sql`, memasang library Python di `.venv`, menjalankan pipeline ETL dari file
+mentah di `data/raw`, lalu menyiapkan Laravel (composer, npm build, key, migrasi, akun demo). Aman dijalankan ulang.
+
+### Akun
+
+Halaman login menampilkan akun demo dengan tombol **"Masuk sebagai …"** yang mengisi email & password otomatis
+(daftarnya di `web/config/akun_demo.php`). Admin bisa mengelola akun (tambah, edit, hapus) lewat tombol **Akun** di kanan atas
+dashboard; peran *pengguna* hanya melihat dashboard. Password akun disimpan sebagai hash bcrypt.
+
+### Langkah manual (bila tidak memakai script)
+
+```bash
+cp .env.example .env && cp web/.env.example web/.env
+/Applications/XAMPP/xamppfiles/bin/mysql -h 127.0.0.1 -u root < sql/schema.sql
+python3 -m venv .venv && .venv/bin/pip install -r etl/requirements.txt
+cd web && composer install && npm install && npm run build
+php artisan key:generate && php artisan migrate --seed && php artisan serve
+```
+
+Gunakan klien `mysql` milik XAMPP: klien MySQL 9 (mis. dari Homebrew) tidak bisa login ke MariaDB XAMPP.
+
+### Replikasi Master-Slave (opsional, untuk demo)
+
+Tanpa langkah ini proyek tetap berjalan dengan **mode script**: `etl/replicate.py` menyalin perubahan `kehutanan_master` ke
+`kehutanan_dashboard` di server yang sama (simulasi Master-Slave). Untuk replikasi **asli** MariaDB (slide TM 9: Master-Slave):
+
+| | Master | Slave |
+|---|---|---|
+| Server | MariaDB XAMPP, port 3306 | MariaDB kedua, port 3307 (data di `~/.kehutanan-replika`) |
+| Database | `kehutanan_master` (ditulis ETL & sinkronisasi) | `kehutanan_dashboard` (dibaca website, `read_only`) |
+| Peran | mencatat setiap perubahan di *binary log* | membaca binary log master dan menjalankan perubahan yang sama, terus-menerus |
+
+```bash
+scripts/replika.sh setup     # sekali (macOS/Linux); menampilkan perintah sudo bila binary log XAMPP belum aktif
+scripts/replika.sh status    # SHOW SLAVE STATUS
+scripts/replika.sh stop      # kembali ke mode script
+scripts/replika.sh start     # nyalakan lagi (mis. setelah restart laptop)
+```
+
+Saat slave aktif, `etl/replicate.py` tidak menyalin apa pun: ia menunggu slave menyusul lalu membandingkan checksum master vs
+slave. Website membaca data dari slave (`DATA_DB_PORT=3307`, diatur otomatis oleh script); tabel login/sesi Laravel tetap di
+server utama karena slave hanya boleh dibaca. Bila slave mati, dashboard otomatis memakai replika cadangan dan menandainya di
+bagian Integrasi. Setelah menjalankan ulang `sql/schema.sql`, jalankan lagi `scripts/replika.sh setup`.
 
 ### Demo sinkronisasi untuk presentasi
 
@@ -67,7 +95,8 @@ Akun demo (hanya untuk lokal): lihat `web/database/seeders/DatabaseSeeder.php`.
 cd etl
 ```
 
-Script mengubah produksi kayu Riau 2025 di master menjadi 0 (dan mereplikasinya), menunggu Enter, lalu memanggil
+yang benar. Refresh dashboard sebelum dan sesudah Enter untuk melihat perubahannya. Pada mode Master-Slave perubahan di master
+langsung tersalin ke slave tanpa menjalankan script replikasi.
 
 ## Struktur folder
 
@@ -75,10 +104,12 @@ Script mengubah produksi kayu Riau 2025 di master menjadi 0 (dan mereplikasinya)
 dashboard-kehutanan/
 ├── data/raw/{xls,xlsx,csv,json}/  file asli dari sumber (jangan diedit)
 ├── etl/                        pipeline Python
+├── scripts/replika.sh          server slave untuk replikasi Master-Slave (opsional)
+├── setup.sh, setup.ps1         setup satu perintah (macOS/Linux, Windows)
 ├── sql/schema.sql              skema 3 database
 └── web/                        Laravel
     ├── routes/web.php
-    ├── app/Http/Controllers/   AuthController, DashboardController
+    ├── app/Http/Controllers/   AuthController, DashboardController, AkunController (CRUD akun)
     ├── app/Models/             satu model per tabel
     ├── app/Services/           DashboardService (olah data untuk grafik)
     ├── resources/views/        auth/, dashboard/, dashboard/partials/, components/ (x-grafik, x-insight, x-judul-panel, x-ikon)

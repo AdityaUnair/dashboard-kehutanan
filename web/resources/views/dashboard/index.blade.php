@@ -35,6 +35,11 @@
             <button id="gantiTema" type="button" class="grid size-9 place-items-center rounded-lg border border-garis bg-surface text-ink-2 hover:text-ink" aria-label="Ganti mode siang/malam" title="Ganti mode siang/malam">
                 <x-ikon nama="bulan" class="size-4 dark:hidden" /><x-ikon nama="matahari" class="hidden size-4 dark:block" />
             </button>
+            @can('kelola-akun')
+                <a href="{{ route('akun.index') }}" class="inline-flex items-center gap-1.5 rounded-lg border border-garis bg-surface px-3 py-2 text-xs font-medium text-ink-2 hover:text-ink" title="Kelola akun">
+                    <x-ikon nama="akun" class="size-4" /><span class="hidden sm:inline">Akun</span>
+                </a>
+            @endcan
             <div class="hidden text-right text-xs leading-tight md:block">
                 <div class="font-medium text-ink">{{ auth()->user()->name }}</div>
                 <div class="text-ink-3">{{ auth()->user()->email }}</div>

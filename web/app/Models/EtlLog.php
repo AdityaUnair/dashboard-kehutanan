@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 /** Catatan setiap tahap ETL (extract, transform-load) beserta hasil cek kualitas. */
 class EtlLog extends Model
 {
+    protected $connection = 'data';
+
     protected $table = 'etl_log';
 
     public $timestamps = false;

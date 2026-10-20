@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class SyncLog extends Model
 {
+    protected $connection = 'data';
+
     protected $table = 'sync_log';
 
     public $timestamps = false;

@@ -12,6 +12,8 @@ use App\Models\SyncLog;
 use App\Models\TutupanKelas;
 use App\Models\TutupanLahan;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * Menyiapkan data siap-tampil untuk dashboard. Semua angka dibaca dari kehutanan_dashboard (replika).
@@ -388,8 +390,10 @@ class DashboardService
     public function statusIntegrasi(): array
     {
         $runTerakhir = EtlLog::max('run_id');
-        $replikasi = ReplicationLog::whereIn('id', ReplicationLog::selectRaw('MAX(id)')->groupBy('tabel'))
-            ->orderBy('id')->get();
+        // hanya pemeriksaan terakhir (semua tabel dicatat dalam satu menit yang sama), satu baris per tabel
+        $terakhir = ReplicationLog::max('waktu');
+        $replikasi = ReplicationLog::whereIn('id', ReplicationLog::selectRaw('MAX(id)')
+            ->where('waktu', '>=', now()->parse($terakhir)->subMinute())->groupBy('tabel'))->orderBy('id')->get();
 
         return [
             'sumber' => [
@@ -400,7 +404,33 @@ class DashboardService
             ],
             'etl' => EtlLog::where('run_id', $runTerakhir)->orderBy('id')->get(),
             'replikasi' => $replikasi,
+            'slave' => $this->statusSlave(),
+            'cadangan' => (bool) config('app.replika_cadangan', false),
             'sync' => SyncLog::orderByDesc('id')->first(),
+        ];
+    }
+
+    /** Status replikasi asli dari server yang dibaca website. Null = server ini bukan slave (mode script). */
+    private function statusSlave(): ?array
+    {
+        try {
+            $s = DB::connection('data')->selectOne('SHOW SLAVE STATUS');
+        } catch (Throwable) {
+            return null;
+        }
+        if (! $s) {
+            return null;
+        }
+        $koneksi = config('database.connections.data');
+
+        return [
+            'slave' => $koneksi['host'].':'.$koneksi['port'],
+            'master' => $s->Master_Host.':'.$s->Master_Port,
+            'io' => $s->Slave_IO_Running === 'Yes',
+            'sql' => $s->Slave_SQL_Running === 'Yes',
+            'tertinggal' => $s->Seconds_Behind_Master,
+            'galat' => trim($s->Last_IO_Error.' '.$s->Last_SQL_Error),
+            'berkas' => $s->Master_Log_File.':'.$s->Read_Master_Log_Pos,
         ];
     }
 }
