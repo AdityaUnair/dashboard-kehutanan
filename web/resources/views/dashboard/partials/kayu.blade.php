@@ -13,7 +13,7 @@
                 dan Kalimantan. Produksi tinggi tidak otomatis berarti hutan alam rusak, karena yang ditebang banyak berupa tanaman yang memang ditanam
                 untuk dipanen.
             </x-slot:kenapa>
-            <x-slot:lanjut>Benarkah begitu? Analisis gabungan G3 menguji apakah provinsi yang banyak terbakar atau banyak memproduksi kayu juga paling banyak kehilangan hutan.</x-slot:lanjut>
+            <x-slot:lanjut>Seberapa banyak hutan yang benar-benar hilang? Data D5 melihat laju deforestasi netto.</x-slot:lanjut>
         </x-insight>
     </x-slot:info>
 </x-grafik>

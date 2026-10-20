@@ -16,7 +16,7 @@
                 Penurunan sejak 2019–2020 bertepatan dengan moratorium permanen izin baru di hutan primer dan gambut (Inpres 5/2019) serta tahun-tahun
                 basah 2020–2022. Lonjakan 2018–2019 sejalan dengan kebakaran besar 2019 (D3).
             </x-slot:kenapa>
-            <x-slot:lanjut>Apa yang menggerus hutan? Dua tersangka utama: kebakaran (D3) dan penebangan untuk kayu (D4).</x-slot:lanjut>
+            <x-slot:lanjut>Apakah provinsi yang banyak terbakar (D3) atau banyak memproduksi kayu (D4) juga paling banyak kehilangan hutan? Analisis gabungan G3 mengujinya.</x-slot:lanjut>
         </x-insight>
     </x-slot:info>
 </x-grafik>

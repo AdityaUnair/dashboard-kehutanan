@@ -22,7 +22,7 @@
                 dan eukaliptus) ikut dihitung sebagai hutan. Jadi kenaikan belum tentu berarti hutan alam pulih; bisa juga tanaman yang tumbuh di
                 bekas lahan terbuka.
             </x-slot:kenapa>
-            <x-slot:lanjut>Kalau tutupan naik, apakah hutan berhenti hilang? Data D5 melihat laju deforestasi.</x-slot:lanjut>
+            <x-slot:lanjut>Kalau tutupan naik, apa yang masih menggerus hutan? Dua tekanan yang diperiksa: kebakaran (D3) dan produksi kayu (D4).</x-slot:lanjut>
         </x-insight>
     </x-slot:info>
 </x-grafik>
