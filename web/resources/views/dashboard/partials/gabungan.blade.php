@@ -14,6 +14,8 @@
 <x-judul-panel judul="Analisis gabungan"
                sub="Menyambungkan beberapa data sekaligus: hal-hal yang tidak terlihat bila tiap data dibaca sendiri-sendiri. Tren gabungan (indeks 2018 = 100) ada di halaman Ringkasan." />
 
+<x-adegan-satelit />
+
 <x-bagian id="kawasan-vs-tutupan" nomor="G2" judul="Seharusnya vs kenyataan" sumber="D1 + D2 · {{ $kawasanVsTutupan['tahun'] }} · ha"
           sub="Luas kawasan hutan (status hukum) dibandingkan dengan luas tutupan hutan (citra satelit) di provinsi dan tahun yang sama.">
     <div class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">

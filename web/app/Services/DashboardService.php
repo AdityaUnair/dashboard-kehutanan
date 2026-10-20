@@ -20,21 +20,6 @@ class DashboardService
 {
     private const TAHUN_AWAL = 2018;
 
-    /**
-     * Posisi petak tiap provinsi di peta sebaran (kolom, baris), disusun mengikuti letak geografis kasar
-     * dari barat ke timur. Setiap provinsi mendapat petak berukuran sama supaya provinsi kecil tetap terlihat.
-     */
-    private const PETAK = [
-        '11' => ['ACEH', 0, 0], '12' => ['SUMUT', 1, 1], '14' => ['RIAU', 2, 1], '21' => ['KEPRI', 3, 1],
-        '13' => ['SUMBAR', 1, 2], '15' => ['JAMBI', 2, 2], '19' => ['BABEL', 3, 2],
-        '17' => ['BKL', 1, 3], '16' => ['SUMSEL', 2, 3], '18' => ['LPG', 2, 4], '31' => ['DKI', 3, 4],
-        '36' => ['BANTEN', 2, 5], '32' => ['JABAR', 3, 5], '33' => ['JATENG', 4, 5], '35' => ['JATIM', 5, 5], '34' => ['DIY', 4, 6],
-        '51' => ['BALI', 6, 6], '52' => ['NTB', 7, 6], '53' => ['NTT', 8, 6],
-        '65' => ['KALTARA', 6, 1], '61' => ['KALBAR', 5, 2], '64' => ['KALTIM', 6, 2], '62' => ['KALTENG', 5, 3], '63' => ['KALSEL', 6, 3],
-        '75' => ['GTLO', 8, 1], '71' => ['SULUT', 9, 1], '72' => ['SULTENG', 8, 2], '76' => ['SULBAR', 7, 3],
-        '74' => ['SULTRA', 8, 3], '73' => ['SULSEL', 7, 4],
-        '82' => ['MALUT', 10, 1], '81' => ['MALUKU', 10, 3], '91' => ['PABAR', 11, 2], '94' => ['PAPUA', 12, 3],
-    ];
 
     private ?Collection $provinsi = null;
 
@@ -384,10 +369,7 @@ class DashboardService
         ];
 
         return [
-            'provinsi' => collect(self::PETAK)->map(fn ($p, $kode) => [
-                'kode' => (string) $kode, 'singkat' => $p[0], 'kolom' => $p[1], 'baris' => $p[2],
-                'nama' => $this->nama((string) $kode), 'wilayah' => $this->provinsi()[(string) $kode]->wilayah,
-            ])->values(),
+            'provinsi' => $this->provinsi()->map(fn ($p) => ['kode' => $p->kode_bps, 'nama' => $p->nama, 'wilayah' => $p->wilayah])->values(),
             'dataset' => $dataset,
         ];
     }

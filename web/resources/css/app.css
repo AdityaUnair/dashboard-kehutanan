@@ -154,22 +154,19 @@
     .label-kontrol {
         @apply mb-1.5 block text-[11px] font-medium text-ink-3 uppercase;
     }
+}
 
-    /* Peta petak (tile map) */
-    .petak {
-        @apply relative flex aspect-square flex-col justify-between rounded-[10px] p-1.5 text-left transition-[transform,box-shadow] outline-none;
-    }
-    .petak:hover,
-    .petak:focus-visible {
-        @apply z-10 scale-[1.06] shadow-[0_0_0_2px_var(--ink)];
-    }
-    .petak[aria-pressed='true'] {
-        @apply shadow-[0_0_0_2px_var(--brand-teks)];
-    }
+#peta path:hover,
+#peta path:focus-visible {
+    filter: brightness(0.92);
 }
 
 html {
     scroll-behavior: smooth;
+}
+
+body {
+    overflow-x: clip;
 }
 
 [hidden] {

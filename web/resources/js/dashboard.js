@@ -575,11 +575,65 @@ function skalaWarna(ds, nilaiTahun) {
     return { warna, legenda };
 }
 
-const gelapkah = (hex) => {
-    const n = parseInt(hex.slice(1), 16);
-    const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.32;
-};
+let geo = null;
+fetch('/peta/provinsi.json').then((r) => r.json()).then((g) => { geo = g; gambarPeta(); gambarIndonesiaDiBumi(); });
+
+// ================================================================== adegan scroll: pohon tumbuh -> kamera naik -> bumi dari satelit
+const adegan = document.getElementById('adeganSatelit');
+const bagianAdegan = (n) => adegan.querySelector(`[data-adegan="${n}"]`);
+const pohonAdegan = [...adegan.querySelectorAll('[data-pohon]')];
+const keteranganAdegan = [...adegan.querySelectorAll('[data-keterangan]')];
+const antara = (p, a, b) => Math.min(1, Math.max(0, (p - a) / (b - a)));
+const halus = (t) => 1 - (1 - t) ** 3; // ease-out
+
+function gambarIndonesiaDiBumi() {
+    // Indonesia di dalam bola bumi, diwarnai persentase daratan berhutan (D2, tahun terakhir)
+    const ds = D.sebaran.dataset.D2;
+    const nilai = ds.nilai[Object.keys(ds.nilai).pop()];
+    const batas = [0.2, 0.4, 0.6, 0.8].map((q) => kuantil(Object.values(nilai), q));
+    const warna = (v) => { const i = batas.findIndex((b) => v <= b); return TEMA.terang.ramp.hijau[i === -1 ? 4 : i]; };
+    const s = 0.44;
+    const [, , lebar, tinggi] = geo.viewBox.split(' ').map(Number);
+    bagianAdegan('indonesia').innerHTML = `<g transform="translate(${600 - (lebar * s) / 2} ${350 - (tinggi * s) / 2}) scale(${s})">${
+        geo.provinsi.map((g) => `<path d="${g.d}" fill="${nilai[g.kode] ? warna(nilai[g.kode]) : W.ramp.hijau[0]}" stroke="#16324a" stroke-width="1"/>`).join('')}</g>`;
+}
+
+function aturAdegan(p) {
+    pohonAdegan.forEach((el, i) => {
+        const mulai = (i / pohonAdegan.length) * 0.22;
+        el.style.transform = `scaleY(${halus(antara(p, mulai, mulai + 0.1))})`;
+    });
+    const naik = halus(antara(p, 0.36, 0.72));
+    bagianAdegan('lanskap').style.transform = `translateY(${-naik * 260}px) scale(${1 - naik * 0.88})`;
+    bagianAdegan('lanskap').style.opacity = 1 - antara(p, 0.42, 0.56);
+    bagianAdegan('angkasa').style.opacity = antara(p, 0.3, 0.5);
+    const bumi = halus(antara(p, 0.55, 0.85));
+    bagianAdegan('bumi').style.opacity = bumi;
+    bagianAdegan('bumi').style.transform = `translateY(110px) scale(${(1.8 - bumi * 0.8) * 0.8})`;
+    const pindai = antara(p, 0.85, 1);
+    bagianAdegan('pemindai').style.opacity = pindai > 0 && pindai < 1 ? 0.8 : 0;
+    bagianAdegan('pemindai').style.transform = `translateX(${pindai * 534}px)`;
+    // tiap teks punya jendela scroll sendiri: masuk (pudar + naik), bertahan, lalu keluar
+    [[0, 0.3], [0.44, 0.68], [0.76, 1.01]].forEach(([a, b], i) => {
+        const o = (i === 0 ? 1 : antara(p, a, a + 0.07)) * (1 - antara(p, b - 0.07, b));
+        keteranganAdegan[i].style.opacity = o;
+        keteranganAdegan[i].style.transform = `translateY(${(1 - o) * (p < a + 0.07 ? 28 : -28)}px)`;
+    });
+}
+
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    adegan.style.height = 'auto';
+    aturAdegan(1);
+} else {
+    let antre = false;
+    const ikutiScroll = () => {
+        antre = false;
+        const kotak = adegan.getBoundingClientRect();
+        aturAdegan(antara(-kotak.top, 0, kotak.height - innerHeight * 0.8));
+    };
+    addEventListener('scroll', () => { if (!antre) { antre = true; requestAnimationFrame(ikutiScroll); } }, { passive: true });
+    ikutiScroll();
+}
 
 const tooltipPeta = Object.assign(document.createElement('div'), {
     className: 'pointer-events-none fixed z-50 hidden rounded-xl border border-white/10 px-3 py-2 text-xs text-white shadow-xl',
@@ -608,36 +662,40 @@ function gambarPeta() {
         .map(([w, l]) => `<span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[4px] border border-garis" style="background:${w}"></span>${l}</span>`)
         .join('');
 
-    elPeta.innerHTML = '';
-    D.sebaran.provinsi.forEach((p) => {
-        const v = nilaiTahun[p.kode];
-        const digabung = (v === undefined || v === null) && ds.kaltaraDigabung && p.kode === '65';
-        const latar = v === undefined || v === null ? W.nol : warna(v);
-        // warna teks mengikuti kecerahan kotak (bukan tema) agar selalu terbaca
-        const warnaTeks = gelapkah(latar) ? '#ffffff' : '#161816';
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'petak';
-        b.style.cssText = `grid-column:${p.kolom + 1};grid-row:${p.baris + 1};background:${latar};color:${warnaTeks};` +
-            (digabung ? `background-image:repeating-linear-gradient(135deg,transparent 0 5px,${W.sumbu} 5px 6px);` : '');
-        b.setAttribute('aria-pressed', String(peta.kode === p.kode));
-        b.setAttribute('aria-label', `${p.nama}: ${v === undefined || v === null ? 'tidak ada data' : satuanTeks(v, ds.satuan)}`);
-        b.innerHTML = `<span class="text-[9.5px] font-bold tracking-wide opacity-90">${p.singkat}</span>
-            <span class="text-[10.5px] font-medium tabular-nums opacity-95">${digabung ? '→ KALTIM' : v === undefined || v === null ? '–' : (ds.satuan === '%' ? fmt.format(v) + '%' : ringkas(v))}</span>`;
-        b.addEventListener('mouseenter', () => {
-            tooltipPeta.style.background = W.tooltip;
-            tooltipPeta.innerHTML = `<div class="font-semibold">${p.nama}</div><div class="mt-0.5 opacity-80">${digabung ? 'Data digabung ke Kalimantan Timur'
-                : v === undefined || v === null ? 'Tidak ada data' : `${satuanTeks(v, ds.satuan)} · peringkat ${peringkat[p.kode]} dari ${urut.length}`}</div>`;
-            tooltipPeta.classList.remove('hidden');
-        });
-        b.addEventListener('mousemove', (e) => { tooltipPeta.style.left = `${e.clientX + 14}px`; tooltipPeta.style.top = `${e.clientY + 14}px`; });
-        b.addEventListener('mouseleave', () => tooltipPeta.classList.add('hidden'));
-        b.addEventListener('click', () => { peta.kode = p.kode; gambarPeta(); });
-        elPeta.append(b);
-    });
-
     // provinsi terpilih: bawaan = peringkat 1
     if (!peta.kode || !D.sebaran.provinsi.some((p) => p.kode === peta.kode)) peta.kode = urut[0]?.[0];
+
+    // Peta provinsi (SVG). Batas wilayah dimuat sekali dari /peta/provinsi.json (hasil etl/siapkan_peta.py).
+    if (geo) {
+        const provinsi = Object.fromEntries(D.sebaran.provinsi.map((p) => [p.kode, p]));
+        elPeta.innerHTML = `<svg viewBox="${geo.viewBox}" class="h-auto w-full"><defs><pattern id="arsir" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="5" height="5" fill="${W.nol}"/><line x1="0" y1="0" x2="0" y2="5" stroke="${W.sumbu}" stroke-width="1.5"/></pattern></defs>${
+            geo.provinsi.map((g) => `<path data-kode="${g.kode}" d="${g.d}"/>`).join('')}</svg>`;
+        elPeta.querySelectorAll('path').forEach((el) => {
+            const p = provinsi[el.dataset.kode];
+            const v = nilaiTahun[p.kode];
+            const kosong = v === undefined || v === null;
+            const digabung = kosong && ds.kaltaraDigabung && p.kode === '65';
+            const dipilih = p.kode === peta.kode;
+            Object.assign(el.style, { fill: digabung ? 'url(#arsir)' : kosong ? W.nol : warna(v), stroke: dipilih ? W.tinta : W.permukaan,
+                strokeWidth: dipilih ? '1.6' : '0.6', strokeLinejoin: 'round', cursor: 'pointer', outline: 'none' });
+            el.setAttribute('tabindex', '0');
+            el.setAttribute('role', 'button');
+            el.setAttribute('aria-label', `${p.nama}: ${kosong ? 'tidak ada data' : satuanTeks(v, ds.satuan)}`);
+            const tampilkanInfo = (x, y) => {
+                tooltipPeta.style.background = W.tooltip;
+                tooltipPeta.innerHTML = `<div class="font-semibold">${p.nama}</div><div class="mt-0.5 opacity-80">${digabung ? 'Data digabung ke Kalimantan Timur'
+                    : kosong ? 'Tidak ada data' : `${satuanTeks(v, ds.satuan)} · peringkat ${peringkat[p.kode]} dari ${urut.length}`}</div>`;
+                Object.assign(tooltipPeta.style, { left: `${x + 14}px`, top: `${y + 14}px` });
+                tooltipPeta.classList.remove('hidden');
+            };
+            el.addEventListener('mousemove', (e) => tampilkanInfo(e.clientX, e.clientY));
+            el.addEventListener('mouseleave', () => tooltipPeta.classList.add('hidden'));
+            el.addEventListener('click', () => { peta.kode = p.kode; gambarPeta(); });
+            el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); peta.kode = p.kode; gambarPeta(); } });
+            if (dipilih) el.parentNode.append(el); // garis tepi provinsi terpilih tampil di atas tetangganya
+        });
+    }
     const prov = D.sebaran.provinsi.find((p) => p.kode === peta.kode);
     const v = nilaiTahun[peta.kode];
     document.getElementById('detailNama').textContent = prov?.nama ?? '—';
@@ -645,7 +703,6 @@ function gambarPeta() {
     document.getElementById('detailNilai').textContent = v === undefined || v === null ? '–' : (ds.satuan === '%' ? fmt.format(v) : ringkas(v));
     document.getElementById('detailSatuan').textContent = v === undefined || v === null ? '' : ds.satuan === '%' ? '% daratan' : ds.satuan;
     document.getElementById('detailPeringkat').textContent = peringkat[peta.kode] ? `Peringkat ${peringkat[peta.kode]} dari ${urut.length} provinsi pada ${peta.tahun}` : 'Tidak ada data pada periode ini';
-    elPeta.querySelectorAll('.petak').forEach((el, i) => el.setAttribute('aria-pressed', String(D.sebaran.provinsi[i].kode === peta.kode)));
 
     const maks = urut[0]?.[1] || 1;
     document.getElementById('top5Ket').textContent = `${ds.label}, ${peta.tahun}`;

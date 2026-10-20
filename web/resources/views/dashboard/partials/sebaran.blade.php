@@ -1,5 +1,5 @@
 <x-judul-panel judul="Peta sebaran per provinsi"
-               sub="Setiap kotak = satu provinsi, diletakkan kira-kira sesuai posisinya dari Aceh sampai Papua. Ukuran kotak sengaja sama supaya provinsi kecil tetap terlihat; yang membedakan hanya warnanya.">
+               sub="Warna tiap provinsi menunjukkan nilai data yang dipilih: makin pekat, makin besar. Pilih data dan tahun di kanan.">
     <div class="flex flex-wrap items-end gap-3">
         <div>
             <label for="sebaranData" class="label-kontrol">Data</label>
@@ -26,11 +26,9 @@
             <div id="sebaranLegenda" class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-ink-3" aria-label="Legenda warna"></div>
         </div>
 
-        <div class="-mx-1 mt-5 overflow-x-auto px-1 pb-1">
-            <div id="peta" class="grid min-w-[640px] grid-cols-13 gap-1.5" role="group" aria-label="Peta petak provinsi"></div>
-        </div>
-        <p class="mt-3 text-[11.5px] text-ink-3">Arahkan kursor ke kotak untuk melihat angka; klik untuk melihat tren provinsi di panel kanan.
-            Kotak bergaris = data provinsi itu masih digabung ke provinsi induknya.</p>
+        <div id="peta" class="mt-5 min-h-48" role="group" aria-label="Peta provinsi Indonesia"></div>
+        <p class="mt-3 text-[11.5px] text-ink-3">Arahkan kursor ke provinsi untuk melihat angka; klik untuk melihat trennya di panel kanan.
+            Provinsi bergaris = datanya masih digabung ke provinsi induk. Batas wilayah: BAKOSURTANAL/Dukcapil via peta-indonesia-geojson (MIT).</p>
         <details class="lihat-tabel" data-tabel-peta>
             <summary>Lihat tabel data</summary>
             <div class="isi"></div>
