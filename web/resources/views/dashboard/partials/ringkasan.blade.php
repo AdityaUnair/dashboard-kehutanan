@@ -31,13 +31,13 @@
 @endphp
 
 {{-- Banner dengan ilustrasi hutan --}}
-<div class="relative overflow-hidden rounded-3xl bg-[#6f9a78] px-6 pt-6 pb-20 text-[#f6f1e4] md:px-8 md:pt-7 md:pb-24">
+<div class="relative overflow-hidden rounded-3xl bg-[#6f9a78] px-6 pt-5 pb-16 text-[#f6f1e4] md:px-8 md:pt-6 md:pb-20">
     <div class="absolute inset-x-0 bottom-0 h-[55%]"><x-lanskap-hutan /></div>
     <div class="relative max-w-2xl">
         <span class="inline-flex items-center gap-1.5 rounded-full bg-black/15 px-3 py-1 text-[11.5px] font-medium backdrop-blur">
             <x-ikon nama="pohon" class="size-3.5" /> Integrasi 5 sumber data · 2018–2026 (2026: Januari–Juli) · 34 provinsi
         </span>
-        <h1 class="mt-3 text-balance text-[24px] leading-[1.15] font-semibold text-white drop-shadow-sm md:text-[30px]">
+        <h1 class="mt-3 text-balance text-[24px] leading-[1.15] font-semibold text-white drop-shadow-sm md:text-[26px]">
             Hutan Indonesia: berapa yang tersisa, dan apa yang menggerusnya?
         </h1>
         <p class="mt-2 max-w-xl text-[14px] leading-relaxed text-[#eef3e6]/90">
@@ -72,7 +72,7 @@
     @endforeach
 </div>
 
-<div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+<div class="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
     <div class="kartu">
         <div class="flex items-center gap-2">
             <span class="grid size-8 place-items-center rounded-lg bg-brand-lembut text-brand-teks"><x-ikon nama="grafik" class="size-4" /></span>

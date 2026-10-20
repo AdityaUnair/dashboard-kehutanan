@@ -1,32 +1,33 @@
 @use('App\Support\Format', 'F')
 
-    <div class="tata-3">
-        <x-grafik id="chartKayuTren" judul="Produksi kayu bulat nasional per tahun" ket="m³" tinggi="h-64" />
-        <x-grafik id="chartKayuProvinsi" judul="10 provinsi produsen kayu terbesar" ket="m³" tinggi="h-60">
-            <div class="mb-3 flex items-center gap-2">
-                <label for="pilihTahunKayu" class="text-xs text-ink-3">Tahun</label>
-                <select id="pilihTahunKayu" class="pilih py-1.5">
-                    @foreach ($kayu['tahun'] as $t)
-                        <option value="{{ $t }}" @selected($loop->last)>{{ $t }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </x-grafik>
+    <x-slot:ringkas>
+        Naik terus hingga puncaknya pada {{ $kayu['puncak'] }} ({{ F::ringkas($kayu['nasional'][$kayu['puncak']]) }} m³), lalu turun.
+    </x-slot:ringkas>
+    <x-slot:info>
+        <x-insight :lipat="false">
+            <x-slot:terlihat>
+                Produksi naik terus hingga puncaknya pada {{ $kayu['puncak'] }} ({{ F::ringkas($kayu['nasional'][$kayu['puncak']]) }} m³), lalu turun.
+            </x-slot:terlihat>
+            <x-slot:kenapa>
+                Sebagian besar kayu bulat berasal dari hutan tanaman industri (HTI) untuk bahan baku pulp dan kertas, terutama di Riau, Sumatera Selatan,
+                dan Kalimantan. Produksi tinggi tidak otomatis berarti hutan alam rusak, karena yang ditebang banyak berupa tanaman yang memang ditanam
+                untuk dipanen.
+            </x-slot:kenapa>
+            <x-slot:lanjut>Benarkah begitu? Analisis gabungan G3 menguji apakah provinsi yang banyak terbakar atau banyak memproduksi kayu juga paling banyak kehilangan hutan.</x-slot:lanjut>
+        </x-insight>
+    </x-slot:info>
+</x-grafik>
 
-        <div class="kolom-insight">
-            <x-insight>
-                <x-slot:terlihat>
-                    Produksi naik terus hingga puncaknya pada {{ $kayu['puncak'] }} ({{ F::ringkas($kayu['nasional'][$kayu['puncak']]) }} m³), lalu turun.
-                    Pada {{ $kayu['tahun']->last() }}, {{ $kayu['teratas'] }} sendiri menghasilkan {{ F::persen($kayu['teratas_persen'], 0) }} kayu bulat nasional,
-                    dan tiga provinsi teratas {{ F::persen($kayu['top3_persen'], 0) }}.
-                </x-slot:terlihat>
-                <x-slot:kenapa>
-                    Sebagian besar kayu bulat berasal dari hutan tanaman industri (HTI) untuk bahan baku pulp dan kertas, terutama di Riau, Sumatera Selatan,
-                    dan Kalimantan. Produksi tinggi tidak otomatis berarti hutan alam rusak, karena yang ditebang banyak berupa tanaman yang memang ditanam
-                    untuk dipanen.
-                </x-slot:kenapa>
-                <x-slot:lanjut>Benarkah begitu? Bagian gabungan (G3) menguji apakah provinsi yang banyak terbakar atau banyak memproduksi kayu juga paling banyak kehilangan hutan.</x-slot:lanjut>
-            </x-insight>
-        </div>
-    </div>
-</x-bagian>
+<x-grafik id="chartKayuProvinsi" kode="D4" ikon="kayu" judul="10 provinsi produsen kayu terbesar" ket="m³ · pilih tahun di kanan">
+    <x-slot:aksi>
+        <select id="pilihTahunKayu" class="pilih py-1 pl-2.5 text-xs" aria-label="Tahun produksi kayu">
+            @foreach ($kayu['tahun'] as $t)
+                <option value="{{ $t }}" @selected($loop->last)>{{ $t }}</option>
+            @endforeach
+        </select>
+    </x-slot:aksi>
+    <x-slot:ringkas>
+        Pada {{ $kayu['tahun']->last() }}, {{ $kayu['teratas'] }} sendiri menghasilkan {{ F::persen($kayu['teratas_persen'], 0) }} kayu bulat nasional;
+        tiga provinsi teratas {{ F::persen($kayu['top3_persen'], 0) }}.
+    </x-slot:ringkas>
+</x-grafik>

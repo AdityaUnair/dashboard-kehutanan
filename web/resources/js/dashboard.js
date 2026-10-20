@@ -78,7 +78,7 @@ function terapkanGayaDasar() {
     Chart.defaults.elements.line.borderWidth = 2;
 }
 
-const sumbuRingkas = () => ({ ticks: { callback: (v) => ringkas(v) }, grid: { color: W.kisi } });
+const sumbuRingkas = () => ({ ticks: { callback: (v) => ringkas(v), maxRotation: 0, maxTicksLimit: 6 }, grid: { color: W.kisi } });
 const tanpaKisi = { grid: { display: false } };
 const labelTooltip = (satuan) => (c) => {
     const v = c.chart.options.indexAxis === 'y' ? c.parsed.x : c.parsed.y;
@@ -258,21 +258,22 @@ document.querySelector('[data-tabel-indeks]').addEventListener('toggle', (e) => 
 
 // ---- D1 kawasan
 DEF.chartKawasanProvinsi = () => {
-    const kw = D.kawasan;
+    // kartu ringkas: 10 provinsi terluas (data sudah terurut dari yang terluas); semua provinsi ada di peta sebaran
+    const pr = D.kawasan.provinsi.slice(0, 10);
     return {
         type: 'bar',
         data: {
-            labels: kw.provinsi.map((p) => p.nama),
+            labels: pr.map((p) => p.nama),
             datasets: [
-                { label: 'Lindung', data: kw.provinsi.map((p) => p.lindung), backgroundColor: W.ordinal[1], ...gayaTumpuk() },
-                { label: 'Konservasi', data: kw.provinsi.map((p) => p.konservasi), backgroundColor: W.ordinal[2], ...gayaTumpuk() },
-                { label: 'Produksi', data: kw.provinsi.map((p) => p.produksi), backgroundColor: W.ordinal[0], ...gayaTumpuk(), borderRadius: { topRight: 5, bottomRight: 5 } },
+                { label: 'Lindung', data: pr.map((p) => p.lindung), backgroundColor: W.ordinal[1], ...gayaTumpuk() },
+                { label: 'Konservasi', data: pr.map((p) => p.konservasi), backgroundColor: W.ordinal[2], ...gayaTumpuk() },
+                { label: 'Produksi', data: pr.map((p) => p.produksi), backgroundColor: W.ordinal[0], ...gayaTumpuk(), borderRadius: { topRight: 5, bottomRight: 5 } },
             ],
         },
         options: {
             indexAxis: 'y',
             scales: { x: { stacked: true, ...sumbuRingkas() }, y: { stacked: true, ...tanpaKisi, ticks: { autoSkip: false, font: { size: 10.5 } } } },
-            plugins: { tooltip: { mode: 'index', callbacks: { label: labelTooltip('ha') } } },
+            plugins: { legend: { labels: { boxWidth: 10, boxHeight: 10, padding: 10 } }, tooltip: { mode: 'index', callbacks: { label: labelTooltip('ha') } } },
         },
     };
 };
@@ -525,8 +526,6 @@ document.querySelectorAll('details.lihat-tabel[data-grafik]').forEach((det) => d
 }));
 
 // ================================================================== satu halaman: grafik digambar saat masuk layar, menu ikut scroll
-const BAGIAN_KE_DATA = { kawasan: 'D1', tutupan: 'D2', deforestasi: 'D5', karhutla: 'D3', kayu: 'D4' };
-
 const pengamatGrafik = new IntersectionObserver((entri) => entri.forEach((e) => {
     if (e.isIntersecting) pastikanGrafik(e.target.parentElement);
 }), { rootMargin: '0px 0px -10% 0px' });
@@ -538,14 +537,7 @@ const pengamatMenu = new IntersectionObserver((entri) => entri.forEach((e) => {
 }), { rootMargin: '-40% 0px -55% 0px' });
 document.querySelectorAll('[data-panel]').forEach((s) => pengamatMenu.observe(s));
 
-// ================================================================== per data: dropdown
-const pilihData = document.getElementById('pilihData');
-function tampilkanData(kode) {
-    pilihData.value = kode;
-    document.querySelectorAll('[data-dataset]').forEach((b) => { b.hidden = b.dataset.dataset !== kode; });
-    pastikanGrafik(document.getElementById('per-data'));
-}
-pilihData.addEventListener('change', () => tampilkanData(pilihData.value));
+// ================================================================== per data: pilihan tahun peringkat provinsi
 [['pilihTahunKarhutla', 'chartKarhutlaProvinsi'], ['pilihTahunKayu', 'chartKayuProvinsi']].forEach(([sel, id]) =>
     document.getElementById(sel).addEventListener('change', () => bangunUlang(id)));
 
@@ -709,14 +701,5 @@ document.getElementById('gantiTema').addEventListener('click', () => {
 });
 
 // ================================================================== mulai
-// Tautan ke bagian satu data (mis. #karhutla) memilih data itu di dropdown dulu, lalu menggulir ke sana
-function ikutiHash() {
-    const id = location.hash.slice(1);
-    if (!BAGIAN_KE_DATA[id]) return;
-    tampilkanData(BAGIAN_KE_DATA[id]);
-    document.getElementById(id).scrollIntoView();
-}
 terapkanGayaDasar();
 gambarPeta();
-ikutiHash();
-window.addEventListener('hashchange', ikutiHash);
