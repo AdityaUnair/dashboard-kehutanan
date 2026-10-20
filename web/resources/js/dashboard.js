@@ -427,32 +427,31 @@ DEF.chartKarhutlaProvinsi = peringkatProvinsi(D.karhutla, () => warnaData().karh
 DEF.chartKayuTren = trenNasional(D.kayu, () => warnaData().kayu, 'm³');
 DEF.chartKayuProvinsi = peringkatProvinsi(D.kayu, () => warnaData().kayu, 'm³', 'pilihTahunKayu');
 
-// ---- G2 validasi silang: urutan batang mengikuti langkah membaca di panel kanan (1 D5 -> 2 D2 -> 3 rincian D1)
-DEF.chartValidasi = () => {
-    const v = D.validasi;
-    const batang = [
-        ['1 · Hutan hilang menurut D5', -v.hilang_d5, 'utama'],
-        ['2 · Perubahan total hutan · D2', v.total_d2, 'utama'],
-        ['3 · Hutan sekunder · D1', v.jenis_d1.sekunder, 'rincian'],
-        ['3 · Hutan tanaman · D1', v.jenis_d1.tanaman, 'rincian'],
-        ['3 · Hutan primer · D1', v.jenis_d1.primer, 'rincian'],
-    ];
-    // rincian D1 = bagian dari batang ② -> warna sama tapi lebih muda
-    const warna = ([, n, jenis]) => { const w = n < 0 ? W.turun : W.naik; return jenis === 'utama' ? w : transparan(w, 0.5); };
-    const terkecil = Math.min(0, ...batang.map(([, n]) => n));
+// ---- G2 kebakaran (D3) vs hutan hilang (D5): satu sumbu hektar. Warna api & amber dibedakan juga lewat
+// garis putus-putus dan bentuk titik, agar tetap terbaca oleh pembaca buta warna.
+DEF.chartApiHutan = () => {
+    const ah = D.apiHutan;
+    const api = warnaData().karhutla;
+    const hilang = warnaData().deforestasi;
     return {
-        type: 'bar',
-        data: { labels: batang.map(([l]) => l), datasets: [{ label: 'Perubahan (ha)', data: batang.map(([, n]) => n), backgroundColor: batang.map(warna), ...gayaBatang, maxBarThickness: 34, borderSkipped: false }] },
+        type: 'line',
+        data: {
+            labels: ah.tahun,
+            datasets: [
+                { label: 'Luas kebakaran (D3)', data: ah.karhutla, borderColor: api, pointBackgroundColor: api, tension: 0, borderWidth: 2.5 },
+                { label: 'Deforestasi netto (D5)', data: ah.deforestasi, borderColor: hilang, pointBackgroundColor: hilang, pointStyle: 'rectRot', pointRadius: 5, borderDash: [6, 4], tension: 0, borderWidth: 2.5 },
+            ],
+        },
         options: {
-            indexAxis: 'y',
-            layout: { padding: { right: 56 } },
-            // ruang ekstra di kiri agar label batang negatif tidak menabrak nama kategori
-            scales: { x: { ...sumbuRingkas(), grace: '10%', min: terkecil * 1.6, ticks: { ...sumbuRingkas().ticks, callback: (n) => (n > 0 ? '+' : '') + ringkas(n) } }, y: { ...tanpaKisi, ticks: { autoSkip: false, color: W.tinta2 } } },
+            layout: { padding: { right: 118, top: 8 } },
+            scales: { y: { ...sumbuRingkas(), beginAtZero: true, title: { display: true, text: 'hektar', color: W.tinta3 } }, x: tanpaKisi },
             plugins: {
                 legend: { display: false },
-                tooltip: { callbacks: { label: (c) => ` ${c.parsed.x > 0 ? '+' : ''}${fmt.format(c.parsed.x)} ha` } },
-                garisAcuan: { nilai: 0 },
-                labelUjungBatang: { aktif: true, format: (n) => (n > 0 ? '+' : '') + ringkas(n) },
+                tooltip: {
+                    mode: 'index', intersect: false,
+                    callbacks: { label: (c) => (c.datasetIndex === 0 ? ` Kebakaran ${c.label}: ${ringkas(c.parsed.y)} ha` : ` Deforestasi ${ah.periode[c.dataIndex]}: ${ringkas(c.parsed.y)} ha/th`) },
+                },
+                labelUjungGaris: { aktif: true, teks: (d) => (d.label.startsWith('Luas') ? 'kebakaran' : 'deforestasi') },
             },
         },
     };

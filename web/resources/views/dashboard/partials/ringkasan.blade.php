@@ -23,7 +23,7 @@
             'Dari '.F::ringkas($kpi['deret']['deforestasi']['2018-2019'] ?? null).' ha/th (2018–2019) menjadi '.F::ringkas($kpi['deforestasi']['nilai']).' ha/th ('.str_replace('-', '–', $kpi['deforestasi']['periode']).').'],
         ['benang-merah', 'kayu', 'Produksi kayu paling dekat dengan deforestasi',
             'Antarprovinsi, kayu ↔ deforestasi r = '.F::angka($benangMerah['r_kayu_defor'], 2).', lebih kuat dari karhutla ↔ deforestasi (r = '.F::angka($benangMerah['r_karhutla_defor'], 2).').'],
-        ['validasi', 'lapisan', 'Dua sumber resmi tidak sepakat',
+        ['catatan-validasi', 'lapisan', 'Dua sumber resmi tidak sepakat',
             'Tutupan hutan (D2) naik '.F::ringkas($validasi['total_d2']).' ha ('.$validasi['periode'].'), padahal deforestasi netto (D5) menunjukkan hutan berkurang.'],
     ];
     $panelIndeks = [

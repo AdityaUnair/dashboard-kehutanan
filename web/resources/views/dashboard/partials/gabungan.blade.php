@@ -15,40 +15,46 @@
                sub="Hal-hal yang baru terlihat bila beberapa data disambungkan. Tren gabungan (indeks 2018 = 100) ada di Ringkasan." />
 
 <div class="grid items-start gap-3 xl:grid-cols-3">
-    {{-- G2: validasi silang D5 -> D2 -> D1, dibaca berurutan mengikuti nomor --}}
+    {{-- G2: kebakaran vs hutan hilang (D3 + D5), dua garis di satu sumbu hektar --}}
     @php
-        $v = $validasi;
-        $langkah = [
-            ['1', 'Harapan dari D5', 'Deforestasi netto mencatat <b>'.F::ringkas($v['hilang_d5']).' ha</b> hutan hilang selama '.$v['periode'].'. Kalau benar, tutupan hutan mestinya turun kira-kira sebanyak itu.'],
-            ['2', 'Kenyataan di D2', 'Tutupan hutan justru <b>naik '.F::ringkas($v['total_d2']).' ha</b>. Selisih kedua data '.F::ringkas($v['selisih']).' ha, jadi keduanya <b>tidak cocok</b>.'],
-            ['3', 'Petunjuk dari D1', 'Kenaikan itu datang dari hutan sekunder (+'.F::ringkas($v['jenis_d1']['sekunder']).') dan hutan tanaman (+'.F::ringkas($v['jenis_d1']['tanaman']).'). Hutan primer nyaris tetap ('.F::ringkas($v['jenis_d1']['primer']).'), jadi hutan yang hilang menurut D5 tidak tampak sebagai turunnya hutan primer.'],
-        ];
+        $ah = $apiHutan;
+        $turunApi = ($ah['puncak']['karhutla'] - $ah['setelah']['karhutla']) / $ah['puncak']['karhutla'] * 100;
+        $turunHutan = ($ah['puncak']['deforestasi'] - $ah['setelah']['deforestasi']) / $ah['puncak']['deforestasi'] * 100;
     @endphp
-    <x-grafik id="chartValidasi" jangkar="validasi" kode="G2" ikon="lapisan" class="xl:col-span-2" tinggi="h-[350px]"
-              judul="Validasi silang: hutan berkurang atau bertambah, {{ str_replace('–', ' → ', $v['periode']) }}?"
-              ket="D1 + D2 + D5 · ha · nasional · {{ $v['periode'] }} (irisan ketiga data) · baca berurutan 1 → 3 bersama panel kanan">
+    <x-grafik id="chartApiHutan" jangkar="api-hutan" kode="G2" ikon="api" class="xl:col-span-2" tinggi="h-[320px]"
+              judul="Apakah kebakaran besar diikuti hilangnya hutan?"
+              ket="D3 + D5 · ha · nasional · {{ $ah['tahun'][0] }}–{{ end($ah['tahun']) }} (irisan kedua data) · deforestasi per periode dua tahun, digambar di tahun akhir periodenya">
         <x-slot:ringkas>
-            D5 bilang hutan berkurang {{ F::ringkas($v['hilang_d5']) }} ha, D2 bilang bertambah {{ F::ringkas($v['total_d2']) }} ha. D1 menunjukkan tambahan itu
-            berasal dari hutan sekunder dan hutan tanaman, bukan hutan primer.
+            Keduanya memuncak bersamaan pada {{ $ah['puncak']['tahun'] }}, lalu sama-sama turun tajam: karhutla rata-rata {{ F::persen($turunApi, 0) }} lebih kecil
+            dan deforestasi {{ F::persen($turunHutan, 0) }} lebih kecil pada tahun-tahun sesudahnya.
         </x-slot:ringkas>
     </x-grafik>
 
-    <div class="kartu border-peringatan/30 bg-peringatan-lembut">
-        <div class="kartu-judul"><span class="mr-1 text-ink-3">G2</span>Cara membaca: apakah D2 dan D5 sepakat?</div>
-        <ol class="mt-3 grid gap-3 text-[12.5px] leading-relaxed text-ink-2">
-            @foreach ($langkah as [$no, $judulLangkah, $isi])
-                <li class="flex gap-2.5">
-                    <span class="grid size-6 shrink-0 place-items-center rounded-full bg-surface text-[12px] font-bold text-peringatan shadow-[inset_0_0_0_1px_var(--garis)]">{{ $no }}</span>
-                    <span><b class="block font-semibold text-ink">{{ $judulLangkah }}</b>{!! $isi !!}</span>
-                </li>
-            @endforeach
-        </ol>
-        <div class="mt-3 rounded-xl bg-surface/70 p-3 text-[12.5px] leading-relaxed text-ink-2">
-            <b class="block font-semibold text-ink">Kesimpulan (dugaan kami)</b>
-            Kemungkinan kedua kelompok data dihitung dengan cara berbeda: D1 dan D2 dari buku <em>Rekalkulasi Penutupan Lahan</em> (semua tahun
-            dihitung ulang), D5 dari buku deforestasi per periode yang terbit lebih dulu. Ini kesimpulan kami dari penggabungan data, bukan
-            pernyataan BPS/KLHK. Perbedaan seperti ini baru terlihat setelah data digabung; dibaca terpisah, masing-masing tampak wajar.
+    <div class="kartu flex flex-col">
+        <div class="kartu-judul"><span class="mr-1 text-ink-3">G2</span>Kebakaran dan hutan hilang bergerak searah</div>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+            <div class="rounded-xl bg-surface-2 p-3">
+                <div class="text-[11px] text-ink-3">Puncak {{ $ah['puncak']['tahun'] }}: karhutla</div>
+                <div class="mt-0.5 text-xl font-bold tabular-nums">{{ F::ringkas($ah['puncak']['karhutla']) }} <span class="text-xs font-normal text-ink-3">ha</span></div>
+            </div>
+            <div class="rounded-xl bg-surface-2 p-3">
+                <div class="text-[11px] text-ink-3">Deforestasi {{ $ah['puncak']['tahun'] - 1 }}–{{ $ah['puncak']['tahun'] }}</div>
+                <div class="mt-0.5 text-xl font-bold tabular-nums">{{ F::ringkas($ah['puncak']['deforestasi']) }} <span class="text-xs font-normal text-ink-3">ha/th</span></div>
+            </div>
         </div>
+        <x-insight :lipat="false" class="mt-3 border-0 bg-transparent p-0">
+            <x-slot:terlihat>
+                Tahun kebakaran terbesar ({{ $ah['puncak']['tahun'] }}) juga periode deforestasi tertinggi. Setelah itu kebakaran mengecil dan deforestasi
+                ikut turun ke kisaran 100–120 rb ha/th. Korelasinya r = {{ F::angka($ah['r'], 2) }}.
+            </x-slot:terlihat>
+            <x-slot:kenapa>
+                Dugaan kami: kebakaran besar 2019 (tahun El Niño, kemarau panjang) menghabisi tutupan hutan, terutama di lahan gambut Sumatera dan
+                Kalimantan. Turunnya deforestasi sesudahnya juga dipengaruhi hal lain, misalnya moratorium izin baru di hutan primer dan gambut (Inpres 5/2019).
+            </x-slot:kenapa>
+            <x-slot:lanjut>
+                Ini pola nasional dari {{ count($ah['tahun']) }} titik waktu, bukan bukti sebab-akibat; data tidak menunjukkan lokasi yang terbakar lalu hilang hutannya.
+            </x-slot:lanjut>
+        </x-insight>
     </div>
 
     {{-- G3: benang merah --}}

@@ -274,7 +274,30 @@ class DashboardService
     }
 
     /**
-     * G2: validasi silang 2018-2022 (irisan ketiga data). Kalau hutan hilang (D5), tutupan hutan (D2) seharusnya turun;
+     * G2: kebakaran (D3) vs hutan hilang (D5), nasional 2018-2022 (irisan kedua data). Keduanya dalam hektar.
+     * D5 berupa periode dua tahun; nilainya dipasangkan dengan tahun akhir periode (2018-2019 -> 2019).
+     */
+    public function kebakaranVsDeforestasi(): array
+    {
+        $tahun = range(self::TAHUN_AWAL, 2022);
+        $api = Karhutla::whereIn('tahun', $tahun)->selectRaw('tahun, SUM(luas_ha) v')->groupBy('tahun')->pluck('v', 'tahun');
+        $hilang = Deforestasi::whereIn('tahun_akhir', $tahun)->selectRaw('tahun_akhir, SUM(total_ha) v')->groupBy('tahun_akhir')->pluck('v', 'tahun_akhir');
+        $x = collect($tahun)->map(fn ($t) => (float) $api[$t]);
+        $y = collect($tahun)->map(fn ($t) => (float) $hilang[$t]);
+        $puncak = $x->search($x->max());
+
+        return [
+            'tahun' => $tahun,
+            'periode' => collect($tahun)->map(fn ($t) => ($t - 1).'–'.$t),
+            'karhutla' => $x, 'deforestasi' => $y,
+            'r' => $this->korelasi($x, $y),
+            'puncak' => ['tahun' => $tahun[$puncak], 'karhutla' => $x[$puncak], 'deforestasi' => $y[$puncak]],
+            'setelah' => ['karhutla' => $x->slice($puncak + 1)->avg(), 'deforestasi' => $y->slice($puncak + 1)->avg()],
+        ];
+    }
+
+    /**
+     * Validasi silang 2018-2022 (ditampilkan di Catatan data) (irisan ketiga data). Kalau hutan hilang (D5), tutupan hutan (D2) seharusnya turun;
      * rincian per jenis hutan (D1) dipakai untuk melihat dari mana perubahan D2 berasal.
      */
     public function validasiSilang(): array
