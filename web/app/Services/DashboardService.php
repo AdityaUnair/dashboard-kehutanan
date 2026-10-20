@@ -58,7 +58,8 @@ class DashboardService
         $tutupan = TutupanLahan::where('tahun', $tutupanTahun)->selectRaw('SUM(hutan_ha) h, SUM(total_ha) t')->first();
         $tutupanAwal = TutupanLahan::where('tahun', self::TAHUN_AWAL)->sum('hutan_ha');
 
-        $karhutla = Karhutla::where('tahun', '<', self::KARHUTLA_PARSIAL)->selectRaw('tahun, SUM(luas_ha) luas')->groupBy('tahun')->pluck('luas', 'tahun');
+        $karhutlaSemua = Karhutla::selectRaw('tahun, SUM(luas_ha) luas')->groupBy('tahun')->orderBy('tahun')->pluck('luas', 'tahun');
+        $karhutla = $karhutlaSemua->except(self::KARHUTLA_PARSIAL); // tahun penuh saja
         $kayu = ProduksiKayu::selectRaw('tahun, SUM(produksi_m3) m3')->groupBy('tahun')->pluck('m3', 'tahun');
         $defor = Deforestasi::selectRaw('periode, SUM(total_ha) total')->groupBy('periode')->orderBy('periode')->pluck('total', 'periode');
 
@@ -70,7 +71,7 @@ class DashboardService
                 'kawasan' => $deret(KawasanHutan::selectRaw('tahun, SUM(total_ha) v')->groupBy('tahun')->orderBy('tahun')->pluck('v', 'tahun')),
                 'tutupan' => $deret(TutupanLahan::selectRaw('tahun, SUM(hutan_ha) v')->groupBy('tahun')->orderBy('tahun')->pluck('v', 'tahun')),
                 'deforestasi' => $deret($defor),
-                'karhutla' => $deret($karhutla),
+                'karhutla' => $deret($karhutlaSemua),
                 'kayu' => $deret($kayu),
             ],
             'kawasan' => ['tahun' => $kawasanTahun, 'nilai' => (float) KawasanHutan::where('tahun', $kawasanTahun)->sum('total_ha')],
@@ -79,7 +80,9 @@ class DashboardService
                 'perubahan' => $this->persen($tutupan->h, $tutupanAwal),
             ],
             'karhutla' => [
-                'tahun' => $karhutla->keys()->last(), 'nilai' => (float) $karhutla->last(),
+                'tahun' => $karhutlaSemua->has(self::KARHUTLA_PARSIAL) ? self::LABEL_PARSIAL : $karhutla->keys()->last(),
+                'nilai' => (float) $karhutlaSemua->last(),
+                'tahun_penuh' => $karhutla->keys()->last(), 'nilai_penuh' => (float) $karhutla->last(),
                 'puncak_tahun' => $karhutla->sortDesc()->keys()->first(), 'puncak' => (float) $karhutla->max(),
             ],
             'kayu' => [
@@ -238,7 +241,7 @@ class DashboardService
     {
         $deret = [
             'Tutupan hutan (D2)' => TutupanLahan::selectRaw('tahun, SUM(hutan_ha) v')->groupBy('tahun')->pluck('v', 'tahun'),
-            'Karhutla (D3)' => Karhutla::where('tahun', '<', self::KARHUTLA_PARSIAL)->selectRaw('tahun, SUM(luas_ha) v')->groupBy('tahun')->pluck('v', 'tahun'),
+            'Karhutla (D3)' => Karhutla::selectRaw('tahun, SUM(luas_ha) v')->groupBy('tahun')->pluck('v', 'tahun'),
             'Produksi kayu (D4)' => ProduksiKayu::selectRaw('tahun, SUM(produksi_m3) v')->groupBy('tahun')->pluck('v', 'tahun'),
             'Deforestasi netto (D5)' => Deforestasi::selectRaw('tahun_akhir tahun, SUM(total_ha) v')->groupBy('tahun_akhir')->pluck('v', 'tahun'),
         ];
@@ -250,7 +253,7 @@ class DashboardService
             $hasil[$label] = array_map(fn ($t) => isset($d[$t]) && $dasar ? round($d[$t] / $dasar * 100, 1) : null, $tahun);
         }
 
-        return ['tahun' => $tahun, 'deret' => $hasil];
+        return ['tahun' => $tahun, 'deret' => $hasil, 'label_tahun' => [self::KARHUTLA_PARSIAL => self::LABEL_PARSIAL]];
     }
 
     /** G2: luas kawasan hutan (status hukum) vs tutupan hutan sebenarnya (citra satelit), tahun yang sama. */

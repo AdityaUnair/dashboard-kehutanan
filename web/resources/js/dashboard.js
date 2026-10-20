@@ -87,7 +87,19 @@ const labelTooltip = (satuan) => (c) => {
 const gayaBatang = { borderRadius: 5, borderSkipped: 'start', maxBarThickness: 30, categoryPercentage: 0.78, barPercentage: 0.86 };
 const gayaTumpuk = () => ({ ...gayaBatang, borderColor: W.permukaan, borderWidth: { right: 2, top: 2 }, borderRadius: 0 });
 // '2018' -> \'18, '2018-2019' -> 18–19, '2026 (Jan–Jul)' -> \'26* (label lengkap tetap di tooltip)
-const labelPendek = (l) => (l.includes('(') ? `'${l.slice(2, 4)}*` : /^\d{4}-\d{4}$/.test(l) ? `${l.slice(2, 4)}–${l.slice(7)}` : `'${String(l).slice(2)}`);
+// Penulisan tahun selalu lengkap: 2019, 2018–2019, dan "2026 (Jan–Jul)" untuk tahun yang belum lengkap (dua baris di sumbu)
+const PARSIAL = D.indeks.label_tahun ?? {};
+const namaTahun = (t) => PARSIAL[t] ?? (/^\d{4}-\d{4}$/.test(String(t)) ? String(t).replace('-', '–') : String(t));
+const labelSumbu = (t) => { const n = namaTahun(t); return n.includes('(') ? n.split(' ') : n; };
+// garis menuju tahun belum lengkap dibuat putus-putus dan titiknya berlubang
+const tandaiParsial = (labels, warna) => {
+    const i = labels.findIndex((t) => PARSIAL[t] || String(t).includes('('));
+    if (i < 0) return {};
+    return {
+        segment: { borderDash: (c) => (c.p1DataIndex === i || c.p1DataIndex - c.p0DataIndex > 1 ? [4, 4] : undefined) },
+        pointBackgroundColor: labels.map((_, j) => (j === i ? W.permukaan : warna)),
+    };
+};
 const transparan = (warna, a = 0.14) => warna + Math.round(a * 255).toString(16).padStart(2, '0');
 // Skala Y mengikuti data, tapi rentangnya minimal `persen` dari nilai tengah: perubahan nyata terlihat,
 // perubahan yang sangat kecil (mis. kawasan −0,2%) tetap tampak hampir datar.
@@ -182,12 +194,12 @@ Object.keys(SPARK).forEach((k) => {
         const warna = SPARK[k] ? warnaData()[SPARK[k]] : W.hijau;
         return {
             type: 'line',
-            data: { labels: Object.keys(deret), datasets: [{ data: Object.values(deret), borderColor: warna, backgroundColor: transparan(warna), fill: true, tension: 0, pointRadius: 0, pointHoverRadius: 3, borderWidth: 1.75 }] },
+            data: { labels: Object.keys(deret), datasets: [{ data: Object.values(deret), borderColor: warna, backgroundColor: transparan(warna), fill: true, tension: 0, pointRadius: 0, pointHoverRadius: 3, borderWidth: 1.75, ...tandaiParsial(Object.keys(deret), warna) }] },
             options: {
                 animation: false,
                 layout: { padding: 2 },
                 scales: { x: { display: false }, y: { display: false, ...skalaPas(Object.values(deret)) } },
-                plugins: { legend: { display: false }, tooltip: { displayColors: false, callbacks: { title: (i) => i[0].label, label: (c) => ringkas(c.parsed.y) } } },
+                plugins: { legend: { display: false }, tooltip: { displayColors: false, callbacks: { title: (i) => namaTahun(i[0].label), label: (c) => ringkas(c.parsed.y) } } },
                 interaction: { mode: 'index', intersect: false },
             },
         };
@@ -207,16 +219,16 @@ Object.entries(INDEKS).forEach(([k, label]) => {
         const max = Math.ceil(kasar.max / langkah) * langkah;
         return {
             type: 'line',
-            data: { labels: D.indeks.tahun, datasets: [{ label, data, borderColor: warna, backgroundColor: transparan(warna, 0.12), fill: 'start', pointBackgroundColor: warna, tension: 0, ...sambungCelah }] },
+            data: { labels: D.indeks.tahun, datasets: [{ label, data, borderColor: warna, backgroundColor: transparan(warna, 0.12), fill: 'start', pointBackgroundColor: warna, tension: 0, ...sambungCelah, ...(k === 'karhutla' ? tandaiParsial(D.indeks.tahun, warna) : {}) }] },
             options: {
                 layout: { padding: { right: 34, top: 6 } },
                 scales: {
                     y: { min, max, ticks: { stepSize: langkah, font: { size: 10 }, callback: (v) => fmt.format(v) } },
-                    x: { ...tanpaKisi, ticks: { font: { size: 10 }, callback(v) { const t = String(this.getLabelForValue(v)); return `'${t.slice(2)}`; } } },
+                    x: { ...tanpaKisi, ticks: { font: { size: 10 }, autoSkip: false, maxRotation: 0, callback(v) { const t = this.getLabelForValue(v); return k === 'karhutla' ? labelSumbu(t) : String(t); } } },
                 },
                 plugins: {
                     legend: { display: false },
-                    tooltip: { mode: 'index', intersect: false, callbacks: { label: (c) => ` indeks ${c.parsed.y === null ? '–' : fmt.format(c.parsed.y)}` } },
+                    tooltip: { mode: 'index', intersect: false, callbacks: { title: (i) => (k === 'karhutla' ? namaTahun(i[0].label) : i[0].label), label: (c) => ` indeks ${c.parsed.y === null ? '–' : fmt.format(c.parsed.y)}` } },
                     garisAcuan: { nilai: 100 },
                     labelUjungGaris: { aktif: true, teks: (_d, v) => fmt.format(v) },
                 },
@@ -343,7 +355,7 @@ const trenNasional = (data, warna, satuan, sorot) => () => {
     const latar = tahun.map((t) => (!sorot || sorot.includes(Number(t)) ? warna() : W.redup));
     // tahun belum lengkap (mis. 2026 Jan–Jul) ditampilkan pucat dengan tanda * agar tidak terbaca sebagai penurunan
     if (data.parsial) {
-        tahun.push(data.parsial.label.slice(0, 4) + '*');
+        tahun.push(data.parsial.label.split(' '));
         nilai.push(data.parsial.nilai);
         latar.push(transparan(warna(), 0.3));
     }
@@ -355,7 +367,7 @@ const trenNasional = (data, warna, satuan, sorot) => () => {
             scales: { y: sumbuRingkas(), x: tanpaKisi },
             plugins: {
                 legend: { display: false },
-                tooltip: { callbacks: { title: (i) => (i[0].label.endsWith('*') ? data.parsial.label : i[0].label), label: labelTooltip(satuan) } },
+                tooltip: { callbacks: { title: (i) => (data.parsial && i[0].dataIndex === tahun.length - 1 ? data.parsial.label : i[0].label), label: labelTooltip(satuan) } },
                 labelUjungBatang: { aktif: true },
             },
         },
@@ -367,7 +379,7 @@ const peringkatProvinsi = (data, warna, satuan, idPilih) => () => {
     const urut = data.provinsi.map((p) => ({ nama: p.nama, v: p.nilai[i] })).sort((a, b) => b.v - a.v).slice(0, 10);
     return {
         type: 'bar',
-        data: { labels: urut.map((p) => p.nama), datasets: [{ label: `${satuan} (${tahunDipilih})`, data: urut.map((p) => p.v), backgroundColor: warna(), ...gayaBatang }] },
+        data: { labels: urut.map((p) => p.nama), datasets: [{ label: `${satuan} (${namaTahun(tahunDipilih)})`, data: urut.map((p) => p.v), backgroundColor: warna(), ...gayaBatang }] },
         options: {
             indexAxis: 'y',
             layout: { padding: { right: 56 } },
@@ -459,7 +471,7 @@ DEF.chartDetailProvinsi = () => {
         type: 'bar',
         data: { labels: label, datasets: [{ label: ds.satuan, data: nilai, backgroundColor: label.map((t) => (t === peta.tahun ? warna : W.redup)), ...gayaBatang, borderSkipped: false }] },
         options: {
-            scales: { y: { ...sumbuRingkas(), grace: '10%' }, x: { ...tanpaKisi, ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: false, callback(v) { return labelPendek(this.getLabelForValue(v)); } } } },
+            scales: { y: { ...sumbuRingkas(), grace: '10%' }, x: { ...tanpaKisi, ticks: { font: { size: 10 }, maxRotation: 45, autoSkip: false, callback(v) { return labelSumbu(this.getLabelForValue(v)); } } } },
             plugins: { legend: { display: false }, tooltip: { callbacks: { label: labelTooltip(ds.satuan) } } },
         },
     };

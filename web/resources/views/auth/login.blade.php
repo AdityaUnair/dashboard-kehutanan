@@ -11,7 +11,7 @@
             <span class="text-sm font-semibold">Dashboard Kehutanan</span>
         </div>
         <div class="relative">
-            <span class="inline-flex rounded-full bg-black/15 px-3 py-1 text-[11.5px] font-medium">Integrasi 5 sumber data · 2018–2025</span>
+            <span class="inline-flex rounded-full bg-black/15 px-3 py-1 text-[11.5px] font-medium">Integrasi 5 sumber data · 2018–2026</span>
             <h1 class="mt-5 max-w-lg text-4xl leading-[1.1] font-semibold text-balance text-white">
                 Hutan Indonesia: berapa yang tersisa, dan apa yang menggerusnya?
             </h1>

@@ -1,8 +1,8 @@
-# Dashboard Kehutanan Indonesia 2018–2025
+# Dashboard Kehutanan Indonesia
 
 Tugas Integrasi Aplikasi Korporasi (Enterprise Application Integration) — Kelompok 3, S1 Teknologi Sains Data FTMM UNAIR.
 
-> **Hutan Indonesia 2018–2025: berapa yang tersisa, dan apa yang menggerusnya?**
+> **Hutan Indonesia: berapa yang tersisa, dan apa yang menggerusnya?**
 > Lima data kehutanan (BPS, KLHK/SiPongi) dalam tiga format berbeda diintegrasikan lewat pipeline ETL
 > ke MariaDB, lalu ditampilkan di dashboard Laravel dengan login.
 
@@ -12,7 +12,7 @@ Tugas Integrasi Aplikasi Korporasi (Enterprise Application Integration) — Kelo
 |---|---|---|---|---|
 | D1 | Luas kawasan hutan per provinsi (2018–2023) | BPS | XLSX | unduh file |
 | D2 | Tutupan lahan hutan & non-hutan per provinsi (2018–2023) | BPS / KLHK | CSV | unduh file |
-| D3 | Luas kebakaran hutan & lahan per provinsi (2018–2025) | SiPongi KLHK | XLSX | unduh file |
+| D3 | Luas kebakaran hutan & lahan per provinsi (2018–2025, + 2026 Januari–Juli) | SiPongi KLHK | XLSX | unduh file |
 | D5 | Deforestasi netto per provinsi (2017–2018 s.d. 2021–2022) | BPS / KLHK | CSV | unduh file |
 
 Link sumber dan catatan tiap file: [`data/raw/SUMBER_DATA.md`](data/raw/SUMBER_DATA.md).

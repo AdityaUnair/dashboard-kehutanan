@@ -5,10 +5,10 @@
     $tiles = [
         ['tutupan', 'daun', 'Tutupan hutan '.$kpi['tutupan']['tahun'], F::ringkas($kpi['tutupan']['nilai']), 'ha',
             F::persen($kpi['tutupan']['persen']).' daratan', [$kpi['tutupan']['perubahan'], 'vs 2018', true], 'D2', 'bg-brand-lembut text-brand-teks'],
-        ['deforestasi', 'kapak', 'Deforestasi netto '.$kpi['deforestasi']['periode'], F::ringkas($kpi['deforestasi']['nilai']), 'ha/th',
-            null, [$kpi['deforestasi']['perubahan'], 'vs 2018–19', false], 'D5', 'bg-[#c58a14]/12 text-[#9a6a0c]'],
+        ['deforestasi', 'kapak', 'Deforestasi netto '.str_replace('-', '–', $kpi['deforestasi']['periode']), F::ringkas($kpi['deforestasi']['nilai']), 'ha/th',
+            null, [$kpi['deforestasi']['perubahan'], 'vs 2018–2019', false], 'D5', 'bg-[#c58a14]/12 text-[#9a6a0c]'],
         ['karhutla', 'api', 'Kebakaran hutan & lahan '.$kpi['karhutla']['tahun'], F::ringkas($kpi['karhutla']['nilai']), 'ha',
-            'puncak '.$kpi['karhutla']['puncak_tahun'].': '.F::ringkas($kpi['karhutla']['puncak']), null, 'D3', 'bg-peringatan-lembut text-peringatan'],
+            $kpi['karhutla']['tahun_penuh'].' (setahun penuh): '.F::ringkas($kpi['karhutla']['nilai_penuh']).' · puncak '.$kpi['karhutla']['puncak_tahun'].': '.F::ringkas($kpi['karhutla']['puncak']), null, 'D3', 'bg-peringatan-lembut text-peringatan'],
         ['kayu', 'kayu', 'Produksi kayu bulat '.$kpi['kayu']['tahun'], F::ringkas($kpi['kayu']['nilai']), 'm³',
             null, [$kpi['kayu']['perubahan'], 'vs 2018', null], 'D4', 'bg-kayu-lembut text-kayu'],
         ['kawasan', 'perisai', 'Luas kawasan hutan '.$kpi['kawasan']['tahun'], F::ringkas($kpi['kawasan']['nilai']), 'ha',
@@ -18,7 +18,7 @@
         ['karhutla', 'api', 'Karhutla meledak di tahun El Niño',
             'Luas terbakar '.$karhutla['puncak'].' mencapai '.F::ringkas($karhutla['nasional'][$karhutla['puncak']]).' ha dan '.$karhutla['puncak_kedua'].' '.F::ringkas($karhutla['nasional'][$karhutla['puncak_kedua']]).' ha, beberapa kali lipat tahun lain.'],
         ['deforestasi', 'kapak', 'Laju deforestasi turun tajam sejak 2019',
-            'Dari '.F::ringkas($kpi['deret']['deforestasi']['2018-2019'] ?? null).' ha/th (2018–19) menjadi '.F::ringkas($kpi['deforestasi']['nilai']).' ha/th ('.$kpi['deforestasi']['periode'].').'],
+            'Dari '.F::ringkas($kpi['deret']['deforestasi']['2018-2019'] ?? null).' ha/th (2018–2019) menjadi '.F::ringkas($kpi['deforestasi']['nilai']).' ha/th ('.str_replace('-', '–', $kpi['deforestasi']['periode']).').'],
         ['benang-merah', 'kayu', 'Produksi kayu paling dekat dengan deforestasi',
             'Antarprovinsi, kayu ↔ deforestasi r = '.F::angka($benangMerah['r_kayu_defor'], 2).', lebih kuat dari karhutla ↔ deforestasi (r = '.F::angka($benangMerah['r_karhutla_defor'], 2).').'],
         ['validasi', 'lapisan', 'Dua sumber resmi tidak sepakat',
@@ -35,10 +35,10 @@
     <div class="absolute inset-x-0 bottom-0 h-[55%]"><x-lanskap-hutan /></div>
     <div class="relative max-w-2xl">
         <span class="inline-flex items-center gap-1.5 rounded-full bg-black/15 px-3 py-1 text-[11.5px] font-medium backdrop-blur">
-            <x-ikon nama="pohon" class="size-3.5" /> Integrasi 5 sumber data · 2018–2025 · 34 provinsi
+            <x-ikon nama="pohon" class="size-3.5" /> Integrasi 5 sumber data · 2018–2026 (2026: Januari–Juli) · 34 provinsi
         </span>
         <h1 class="mt-4 text-balance text-[26px] leading-[1.15] font-semibold text-white drop-shadow-sm md:text-[36px]">
-            Hutan Indonesia 2018–2025: berapa yang tersisa, dan apa yang menggerusnya?
+            Hutan Indonesia: berapa yang tersisa, dan apa yang menggerusnya?
         </h1>
         <p class="mt-3 max-w-xl text-[14.5px] leading-relaxed text-[#eef3e6]/90">
             Data BPS dan KLHK dalam tiga format (XLSX, CSV, JSON) diekstrak, diseragamkan, lalu dimuat ke satu database.
