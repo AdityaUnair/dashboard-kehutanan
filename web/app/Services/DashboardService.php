@@ -33,7 +33,7 @@ class DashboardService
         return $this->provinsi()[$kode]->nama ?? $kode;
     }
 
-    /** Kalimantan Utara digabung ke Kalimantan Timur agar setara dengan D1, D2, D5 yang belum memisahkan. */
+    /** Kalimantan Utara digabung ke Kalimantan Timur agar setara dengan D1, D2, D5 (lihat catatan sumber di data/raw/SUMBER_DATA.md). */
     private function kodeGabungan(string $kode): string
     {
         return $kode === '65' ? '64' : $kode;
@@ -345,7 +345,7 @@ class DashboardService
             'D2' => [
                 'label' => 'Tutupan hutan (% daratan)', 'satuan' => '%', 'skala' => 'sekuensial', 'kaltaraDigabung' => true,
                 'nilai' => $perTahun(TutupanLahan::all(), 'tahun', 'persen_hutan'),
-                'catatan' => 'Persentase daratan provinsi yang tertutup hutan. Tahun 2020 tidak tersedia (data sumber tidak valid).',
+                'catatan' => 'Persen daratan provinsi yang masih berhutan. Tahun 2020 tidak ada: dibuang oleh pemeriksaan ETL karena nilainya mustahil (BPS tidak memberi catatan).',
             ],
             'D1' => [
                 'label' => 'Luas kawasan hutan', 'satuan' => 'ha', 'skala' => 'sekuensial', 'kaltaraDigabung' => true,

@@ -18,7 +18,7 @@ from angka import angka_indonesia, angka_inggris, angka_polos, angka_spasi
 from config import DB_MASTER, DB_STAGING, TAHUN_MAKS, TAHUN_MIN, catat_etl, koneksi, run_id, sekarang
 from provinsi import PROVINSI, kode_provinsi
 
-CATATAN_KALTIM = "Termasuk Kalimantan Utara (sumber belum memisahkan)"
+CATATAN_KALTIM = "Termasuk Kalimantan Utara"
 
 
 def ambil(conn, sql):
@@ -130,7 +130,8 @@ def transform_d2(conn):
             dibuang["di luar periode"] += 1
             continue
         if kode == "65":
-            # 2014-2022 sumber menggabung Kaltara ke Kaltim; 2023 juga digabung agar deret waktu konsisten
+            # BPS menggabung Kaltara ke Kaltim untuk 2014-2020 (ada keterangan di tabel); 2021+ sudah terpisah
+            # tapi ikut digabung di sini agar deret waktu Kaltim tidak turun palsu di 2021
             kode = "64"
         # T4: ribu ha -> ha
         _tambah(agregat, (kode, tahun), {"hutan_ha": hutan * 1000, "non_hutan_ha": non * 1000, "total_ha": jml * 1000})
