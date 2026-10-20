@@ -86,6 +86,8 @@ const labelTooltip = (satuan) => (c) => {
 };
 const gayaBatang = { borderRadius: 5, borderSkipped: 'start', maxBarThickness: 30, categoryPercentage: 0.78, barPercentage: 0.86 };
 const gayaTumpuk = () => ({ ...gayaBatang, borderColor: W.permukaan, borderWidth: { right: 2, top: 2 }, borderRadius: 0 });
+// '2018' -> \'18, '2018-2019' -> 18–19, '2026 (Jan–Jul)' -> \'26* (label lengkap tetap di tooltip)
+const labelPendek = (l) => (l.includes('(') ? `'${l.slice(2, 4)}*` : /^\d{4}-\d{4}$/.test(l) ? `${l.slice(2, 4)}–${l.slice(7)}` : `'${String(l).slice(2)}`);
 const transparan = (warna, a = 0.14) => warna + Math.round(a * 255).toString(16).padStart(2, '0');
 // Skala Y mengikuti data, tapi rentangnya minimal `persen` dari nilai tengah: perubahan nyata terlihat,
 // perubahan yang sangat kecil (mis. kawasan −0,2%) tetap tampak hampir datar.
@@ -337,13 +339,25 @@ DEF.chartDeforProvinsi = () => {
 // ---- D3 karhutla & D4 kayu: tren nasional + peringkat provinsi per tahun
 const trenNasional = (data, warna, satuan, sorot) => () => {
     const tahun = Object.keys(data.nasional);
+    const nilai = Object.values(data.nasional);
+    const latar = tahun.map((t) => (!sorot || sorot.includes(Number(t)) ? warna() : W.redup));
+    // tahun belum lengkap (mis. 2026 Jan–Jul) ditampilkan pucat dengan tanda * agar tidak terbaca sebagai penurunan
+    if (data.parsial) {
+        tahun.push(data.parsial.label.slice(0, 4) + '*');
+        nilai.push(data.parsial.nilai);
+        latar.push(transparan(warna(), 0.3));
+    }
     return {
         type: 'bar',
-        data: { labels: tahun, datasets: [{ label: satuan, data: Object.values(data.nasional), backgroundColor: tahun.map((t) => (!sorot || sorot.includes(Number(t)) ? warna() : W.redup)), ...gayaBatang }] },
+        data: { labels: tahun, datasets: [{ label: satuan, data: nilai, backgroundColor: latar, ...gayaBatang }] },
         options: {
             layout: { padding: { top: 18 } },
             scales: { y: sumbuRingkas(), x: tanpaKisi },
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: labelTooltip(satuan) } }, labelUjungBatang: { aktif: true } },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { title: (i) => (i[0].label.endsWith('*') ? data.parsial.label : i[0].label), label: labelTooltip(satuan) } },
+                labelUjungBatang: { aktif: true },
+            },
         },
     };
 };
@@ -445,7 +459,7 @@ DEF.chartDetailProvinsi = () => {
         type: 'bar',
         data: { labels: label, datasets: [{ label: ds.satuan, data: nilai, backgroundColor: label.map((t) => (t === peta.tahun ? warna : W.redup)), ...gayaBatang, borderSkipped: false }] },
         options: {
-            scales: { y: { ...sumbuRingkas(), grace: '10%' }, x: { ...tanpaKisi, ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: false, callback(v) { const l = this.getLabelForValue(v); return l.length > 4 ? l.replace(/^20(\d\d)-20(\d\d)$/, '$1–$2') : l; } } } },
+            scales: { y: { ...sumbuRingkas(), grace: '10%' }, x: { ...tanpaKisi, ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: false, callback(v) { return labelPendek(this.getLabelForValue(v)); } } } },
             plugins: { legend: { display: false }, tooltip: { callbacks: { label: labelTooltip(ds.satuan) } } },
         },
     };

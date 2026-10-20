@@ -199,7 +199,8 @@ class DashboardService
     public function karhutla(): array
     {
         $m = $this->matriks(Karhutla::all(), 'luas_ha');
-        $m['nasional'] = $m['nasional']->except(self::KARHUTLA_PARSIAL); // tren hanya tahun penuh
+        $parsial = $m['nasional'][self::KARHUTLA_PARSIAL] ?? null;
+        $m['nasional'] = $m['nasional']->except(self::KARHUTLA_PARSIAL); // puncak & sorotan dihitung dari tahun penuh saja
         $puncak = $m['nasional']->sortDesc()->keys()->first();
         $rows2019 = Karhutla::where('tahun', $puncak)->get();
         $wilayah = $rows2019->groupBy(fn ($r) => $this->provinsi()[$r->kode_bps]->wilayah)
@@ -208,6 +209,7 @@ class DashboardService
         return $m + [
             'puncak' => $puncak,
             'label_tahun' => [self::KARHUTLA_PARSIAL => self::LABEL_PARSIAL],
+            'parsial' => $parsial === null ? null : ['label' => self::LABEL_PARSIAL, 'nilai' => $parsial],
             'puncak_kedua' => $m['nasional']->sortDesc()->keys()->get(1),
             'sorot' => $m['nasional']->sortDesc()->keys()->take(2)->values(),
             'wilayah_puncak' => $wilayah->keys()->take(2)->values(),

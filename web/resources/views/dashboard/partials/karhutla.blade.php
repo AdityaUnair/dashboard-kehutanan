@@ -4,7 +4,7 @@
           sub="Luas indikatif kebakaran hutan dan lahan per provinsi. Data 2026 baru tercatat sampai Juli, jadi hanya ditampilkan di peringkat provinsi (bukan di tren).">
     <div class="grid gap-4 xl:grid-cols-2">
         <x-grafik id="chartKarhutlaTren" judul="Luas karhutla nasional per tahun"
-                  ket="Dua tahun dengan kebakaran terluas diberi warna; tahun lain abu-abu" tinggi="h-80" />
+                  ket="Dua tahun dengan kebakaran terluas diberi warna; tahun lain abu-abu. 2026* (pucat) baru berisi Januari–Juli." tinggi="h-80" />
         <x-grafik id="chartKarhutlaProvinsi" judul="10 provinsi dengan karhutla terluas" ket="ha" tinggi="h-72">
             <div class="mb-3 flex items-center gap-2">
                 <label for="pilihTahunKarhutla" class="text-xs text-ink-3">Tahun</label>
