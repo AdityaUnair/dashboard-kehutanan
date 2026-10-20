@@ -4,8 +4,9 @@
 #
 #   Master = MariaDB XAMPP (port 3306), database kehutanan_master.
 #   Slave  = server MariaDB kedua (port 3307) yang datanya disimpan di ~/.kehutanan-replika (di luar repo).
-#            Slave membaca binary log master dan menyalin setiap perubahan kehutanan_master secara otomatis,
-#            disimpan sebagai kehutanan_dashboard (database yang dibaca website). Slave bersifat read_only.
+#            Slave membaca binary log master dan menyalin setiap perubahan kehutanan_master secara otomatis ke
+#            kehutanan_master miliknya sendiri (salinan identik, read_only). Website membaca salinan ini.
+#            Database lain di master (staging, tabel login/sesi Laravel) tidak ikut disalin.
 #
 #   scripts/replika.sh setup    sekali di awal (dan setiap kali sql/schema.sql dijalankan ulang)
 #   scripts/replika.sh start    nyalakan slave + arahkan website ke slave
@@ -70,8 +71,7 @@ collation-server=utf8mb4_unicode_ci
 server-id=2
 read_only=1
 relay-log=$DIR/data/relay-bin
-replicate-rewrite-db=kehutanan_master->kehutanan_dashboard
-replicate-do-db=kehutanan_dashboard
+replicate-do-db=kehutanan_master
 CNF
 }
 
@@ -83,25 +83,31 @@ nyalakan() {
     gagal "Slave tidak mau menyala. Lihat log: $DIR/error.log"
 }
 
-arahkan_web() {  # port data yang dibaca Laravel (web/.env -> DATA_DB_PORT)
+atur_env() {  # atur_env NAMA NILAI -> tulis/ganti baris di web/.env
     local env="$ROOT/web/.env"
-    [ -f "$env" ] || return 0
-    if grep -q '^DATA_DB_PORT=' "$env"; then
-        perl -pi -e "s/^DATA_DB_PORT=.*/DATA_DB_PORT=$1/" "$env"
+    if grep -q "^$1=" "$env"; then perl -pi -e "s/^$1=.*/$1=$2/" "$env"; else printf '%s=%s\n' "$1" "$2" >> "$env"; fi
+}
+
+arahkan_web() {  # sumber data website: "slave" (port 3307, kehutanan_master) atau "script" (koneksi utama)
+    [ -f "$ROOT/web/.env" ] || return 0
+    if [ "$1" = slave ]; then
+        atur_env DATA_DB_PORT "$PORT_SLAVE"; atur_env DATA_DB_DATABASE kehutanan_master
+        info "Website membaca data dari slave (port $PORT_SLAVE, kehutanan_master)"
     else
-        printf '\nDATA_DB_PORT=%s\n' "$1" >> "$env"
+        atur_env DATA_DB_PORT ""; atur_env DATA_DB_DATABASE ""
+        info "Website membaca data dari replika mode script (port $PORT_MASTER, kehutanan_dashboard)"
     fi
     (cd "$ROOT/web" && php artisan config:clear >/dev/null 2>&1 || true)
-    info "Website membaca data dari port $1"
 }
 
 python_etl() { if [ -x "$ROOT/.venv/bin/python" ]; then echo "$ROOT/.venv/bin/python"; else echo python3; fi; }
 
 perintah_setup() {
     cek_master
+    if slave_hidup; then slave -e "SHUTDOWN"; sleep 3; fi   # konfigurasi selalu ditulis ulang
+    tulis_cnf
     if [ ! -d "$DIR/data/mysql" ]; then
         info "Membuat server slave baru di $DIR"
-        tulis_cnf
         "$XAMPP/bin/mysql_install_db" --defaults-file="$CNF" --auth-root-authentication-method=normal \
             --skip-test-db >"$DIR/install.log" 2>&1 || gagal "mysql_install_db gagal, lihat $DIR/install.log"
     fi
@@ -123,14 +129,15 @@ perintah_setup() {
     info "Memuat salinan awal ke slave lalu menyambungkan ke master ($berkas:$pos)"
     slave -e "STOP SLAVE; RESET SLAVE ALL;
               DROP DATABASE IF EXISTS kehutanan_dashboard;
-              CREATE DATABASE kehutanan_dashboard CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    slave kehutanan_dashboard < "$DIR/salinan-awal.sql"
+              DROP DATABASE IF EXISTS kehutanan_master;
+              CREATE DATABASE kehutanan_master CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    slave kehutanan_master < "$DIR/salinan-awal.sql"
     slave -e "CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=$PORT_MASTER,
                   MASTER_USER='$REPL_USER', MASTER_PASSWORD='$REPL_PASS',
                   MASTER_LOG_FILE='$berkas', MASTER_LOG_POS=$pos;
               START SLAVE;"
     sleep 2
-    arahkan_web "$PORT_SLAVE"
+    arahkan_web slave
     perintah_status
 }
 
@@ -138,12 +145,12 @@ perintah_start() {
     cek_master
     nyalakan
     slave -e "START SLAVE" 2>/dev/null || true
-    arahkan_web "$PORT_SLAVE"
+    arahkan_web slave
     perintah_status
 }
 
 perintah_stop() {
-    arahkan_web "$PORT_MASTER"
+    arahkan_web script
     if slave_hidup; then
         slave -e "SHUTDOWN"
         info "Slave dimatikan"
@@ -157,7 +164,7 @@ perintah_status() {
         echo "Slave: MATI (port $PORT_SLAVE). Website memakai mode script."
         return 0
     fi
-    slave -e "SHOW SLAVE STATUS\G" | grep -E ' (Master_Host|Master_Port|Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master|Last_IO_Error|Last_SQL_Error|Replicate_Rewrite_DB|Replicate_Do_DB):'
+    slave -e "SHOW SLAVE STATUS\G" | grep -E ' (Master_Host|Master_Port|Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master|Last_IO_Error|Last_SQL_Error|Replicate_Do_DB):'
 }
 
 case "${1:-status}" in

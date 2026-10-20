@@ -74,19 +74,21 @@ Tanpa langkah ini proyek tetap berjalan dengan **mode script**: `etl/replicate.p
 | | Master | Slave |
 |---|---|---|
 | Server | MariaDB XAMPP, port 3306 | MariaDB kedua, port 3307 (data di `~/.kehutanan-replika`) |
-| Database | `kehutanan_master` (ditulis ETL & sinkronisasi) | `kehutanan_dashboard` (dibaca website, `read_only`) |
-| Peran | mencatat setiap perubahan di *binary log* | membaca binary log master dan menjalankan perubahan yang sama, terus-menerus |
+| Database | `kehutanan_master` (ditulis ETL & sinkronisasi) | salinan identik `kehutanan_master` (dibaca website, `read_only`) |
+| Peran | mencatat setiap perubahan di *binary log* (`binlog_format=ROW`) | membaca binary log master dan menjalankan perubahan yang sama, terus-menerus |
+| Disalin | – | hanya `kehutanan_master` (`replicate-do-db`); staging dan tabel login/sesi Laravel tidak ikut |
 
 ```bash
-scripts/replika.sh setup     # sekali (macOS/Linux); menampilkan perintah sudo bila binary log XAMPP belum aktif
+scripts/replika.sh setup     # sekali (macOS/Linux); menampilkan perintah sudo bila binary log XAMPP belum aktif,
+                             # lalu restart MySQL: sudo /Applications/XAMPP/xamppfiles/xampp stopmysql && ... startmysql
 scripts/replika.sh status    # SHOW SLAVE STATUS
 scripts/replika.sh stop      # kembali ke mode script
 scripts/replika.sh start     # nyalakan lagi (mis. setelah restart laptop)
 ```
 
 Saat slave aktif, `etl/replicate.py` tidak menyalin apa pun: ia menunggu slave menyusul lalu membandingkan checksum master vs
-slave. Website membaca data dari slave (`DATA_DB_PORT=3307`, diatur otomatis oleh script); tabel login/sesi Laravel tetap di
-server utama karena slave hanya boleh dibaca. Bila slave mati, dashboard otomatis memakai replika cadangan dan menandainya di
+slave. Website membaca data dari slave (`DATA_DB_PORT=3307`, `DATA_DB_DATABASE=kehutanan_master`, diatur otomatis oleh
+script); tabel login/sesi Laravel tetap di server utama karena slave hanya boleh dibaca. Bila slave mati, dashboard otomatis memakai replika cadangan dan menandainya di
 bagian Integrasi. Setelah menjalankan ulang `sql/schema.sql`, jalankan lagi `scripts/replika.sh setup`.
 
 ### Demo sinkronisasi untuk presentasi

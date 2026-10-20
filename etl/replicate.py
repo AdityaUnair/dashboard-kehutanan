@@ -2,9 +2,9 @@
 
 Mode dipilih otomatis:
   1. MASTER-SLAVE (replikasi bawaan MariaDB), bila server slave (port 3307, lihat scripts/replika.sh) aktif.
-     MariaDB XAMPP (master) mencatat setiap perubahan di binary log; server slave membacanya dan menyalin perubahan
-     ke kehutanan_dashboard miliknya secara terus-menerus. Script ini TIDAK menyalin apa pun: hanya menunggu slave
-     menyusul, lalu membandingkan jumlah baris & CHECKSUM TABLE master vs slave.
+     MariaDB XAMPP (master) mencatat setiap perubahan di binary log; server slave membacanya dan menjalankan perubahan
+     yang sama pada salinan kehutanan_master miliknya secara terus-menerus (website membaca salinan ini). Script ini
+     TIDAK menyalin apa pun: hanya menunggu slave menyusul, lalu membandingkan jumlah baris & CHECKSUM TABLE.
   2. SCRIPT (simulasi Master-Slave di satu server), bila slave tidak aktif. Replikasi inkremental berbasis primary key:
        - baris yang ada di master tapi belum ada di replika  -> disisipkan
        - baris yang isinya berbeda                           -> diperbarui
@@ -93,7 +93,8 @@ def mode_master_slave(conn, slave):
         if cs.fetchone()[0] in (None, -1):
             print("[replicate:master-slave] PERINGATAN: slave belum menyusul dalam 30 detik")
         for tabel in TABEL:
-            (n_m, cs_m), (n_r, cs_r) = _hitung(cur, DB_MASTER, tabel), _hitung(cs, DB_DASHBOARD, tabel)
+            # slave menyimpan salinan dengan nama database yang sama
+            (n_m, cs_m), (n_r, cs_r) = _hitung(cur, DB_MASTER, tabel), _hitung(cs, DB_MASTER, tabel)
             status = _catat(cur, "master-slave", tabel, n_m, n_r, None, None, None, cs_m, cs_r)
             print(f"[replicate:master-slave] {tabel:22} master={n_m:4} slave={n_r:4} {status}")
     conn.commit()  # catatan ini sendiri ikut tersalin ke slave lewat binary log

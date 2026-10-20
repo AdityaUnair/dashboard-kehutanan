@@ -44,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
             DB::connection('data')->getPdo();
         } catch (Throwable) {
             config(['database.connections.data.host' => $utama['host'], 'database.connections.data.port' => $utama['port'],
+                'database.connections.data.database' => $utama['database'],
                 'database.connections.data.username' => $utama['username'], 'database.connections.data.password' => $utama['password']]);
             DB::purge('data');
             config(['app.replika_cadangan' => true]);
