@@ -4,7 +4,7 @@
     $perubahanKawasan = ($kawasan['akhir']['total'] - $kawasan['awal']['total']) / $kawasan['awal']['total'] * 100;
 @endphp
 
-<x-bagian id="kawasan" nomor="1" judul="Seharusnya: luas kawasan hutan" sumber="D1 · BPS · XLSX · ha"
+<x-bagian id="kawasan" data-dataset="D1" nomor="1" judul="Seharusnya: luas kawasan hutan" sumber="D1 · BPS · XLSX · ha"
           sub="Kawasan hutan adalah wilayah yang ditetapkan pemerintah sebagai hutan lewat SK Menteri — status hukum, bukan hasil pengamatan lapangan.">
     <div class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <x-grafik id="chartKawasanProvinsi" judul="Luas kawasan hutan per provinsi, {{ $kawasan['tahun'] }}"

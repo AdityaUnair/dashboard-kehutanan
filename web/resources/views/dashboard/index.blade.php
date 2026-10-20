@@ -8,58 +8,61 @@
 @endpush
 
 @section('isi')
-<div class="lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
-    <aside class="bg-brand-gelap px-4 py-6 text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
-        <div class="px-3">
-            <div class="text-[17px] font-bold">Dashboard Kehutanan</div>
-            <div class="mt-1 text-[10.5px] font-semibold tracking-[0.15em] text-white/50 uppercase">Data-level EAI · Kelompok 3</div>
-        </div>
+@php
+    $tabs = [
+        'ringkasan' => 'Ringkasan',
+        'per-data' => 'Per data',
+        'sebaran' => 'Peta sebaran',
+        'gabungan' => 'Analisis gabungan',
+        'integrasi' => 'Integrasi data',
+    ];
+@endphp
 
-        <nav class="mt-6 grid grid-cols-2 gap-0.5 lg:grid-cols-1" aria-label="Navigasi bagian">
-            @php
-                $menu = [
-                    null => [['ringkasan', 'Ringkasan']],
-                    'Per data' => [['kawasan', '1 · Kawasan hutan'], ['tutupan', '2 · Tutupan hutan'], ['deforestasi', '3 · Deforestasi'],
-                                   ['karhutla', '4 · Kebakaran'], ['kayu', '5 · Produksi kayu']],
-                    'Gabungan' => [['tren-gabungan', 'Tren gabungan'], ['kawasan-vs-tutupan', 'Kawasan vs tutupan'],
-                                   ['benang-merah', 'Benang merah'], ['validasi', 'Validasi silang']],
-                    'Sistem' => [['integrasi', 'Status integrasi']],
-                ];
-            @endphp
-            @foreach ($menu as $grup => $tautan)
-                @if ($grup)
-                    <div class="col-span-full mt-4 mb-1 px-3 text-[10px] font-semibold tracking-[0.15em] text-white/40 uppercase">{{ $grup }}</div>
-                @endif
-                @foreach ($tautan as [$jangkar, $label])
-                    <a href="#{{ $jangkar }}" class="nav-tautan" data-jangkar="{{ $jangkar }}">{{ $label }}</a>
-                @endforeach
+<header class="sticky top-0 z-30 border-b border-garis bg-page/80 backdrop-blur-xl">
+    <div class="mx-auto flex max-w-[1360px] items-center gap-4 px-4 py-3 md:px-6">
+        <a href="#ringkasan" class="flex shrink-0 items-center gap-2.5" data-ke-tab="ringkasan">
+            <span class="grid size-8 place-items-center rounded-lg bg-brand text-sm font-bold text-white">K3</span>
+            <span class="hidden text-sm leading-tight font-semibold sm:block">Dashboard Kehutanan<span class="block text-[11px] font-normal text-ink-3">Data-level EAI · Kelompok 3</span></span>
+        </a>
+
+        <nav class="mx-auto hidden items-center gap-1 rounded-xl border border-garis bg-surface p-1 lg:flex" role="tablist" aria-label="Halaman dashboard">
+            @foreach ($tabs as $id => $label)
+                <button class="tab" role="tab" data-tab="{{ $id }}" aria-controls="panel-{{ $id }}" aria-selected="false">{{ $label }}</button>
             @endforeach
         </nav>
 
-        <div class="mt-6 border-t border-white/10 px-3 pt-4 text-xs text-white/60 lg:mt-auto">
-            Masuk sebagai
-            <div class="mt-0.5 text-[13px] font-semibold text-white">{{ auth()->user()->name }}</div>
-            <div>{{ auth()->user()->email }}</div>
+        <div class="ml-auto flex items-center gap-2 lg:ml-0">
+            <button id="gantiTema" type="button" class="grid size-9 place-items-center rounded-lg border border-garis bg-surface text-ink-2 hover:text-ink" aria-label="Ganti tema terang/gelap" title="Ganti tema">
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </button>
+            <div class="hidden text-right text-xs leading-tight md:block">
+                <div class="font-medium text-ink">{{ auth()->user()->name }}</div>
+                <div class="text-ink-3">{{ auth()->user()->email }}</div>
+            </div>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="mt-3 w-full rounded-lg border border-white/20 py-2 text-[13px] text-white transition-colors hover:bg-white/10">Keluar</button>
+                <button type="submit" class="rounded-lg border border-garis bg-surface px-3 py-2 text-xs font-medium text-ink-2 hover:text-ink">Keluar</button>
             </form>
         </div>
-    </aside>
+    </div>
 
-    <main class="mx-auto w-full max-w-[1320px] px-4 pt-8 pb-16 md:px-8">
-        @include('dashboard.partials.ringkasan')
-        @include('dashboard.partials.kawasan')
-        @include('dashboard.partials.tutupan')
-        @include('dashboard.partials.deforestasi')
-        @include('dashboard.partials.karhutla')
-        @include('dashboard.partials.kayu')
-        @include('dashboard.partials.gabungan')
-        @include('dashboard.partials.integrasi')
+    {{-- Tab versi layar kecil: bisa digeser --}}
+    <nav class="flex gap-1 overflow-x-auto px-4 pb-2.5 lg:hidden" role="tablist" aria-label="Halaman dashboard">
+        @foreach ($tabs as $id => $label)
+            <button class="tab" role="tab" data-tab="{{ $id }}" aria-controls="panel-{{ $id }}" aria-selected="false">{{ $label }}</button>
+        @endforeach
+    </nav>
+</header>
 
-        <footer class="mt-16 border-t border-grid pt-4 text-xs text-ink-3">
-            <code>kehutanan_dashboard</code> (replika) hasil pipeline ETL.
-        </footer>
-    </main>
-</div>
+<main class="mx-auto max-w-[1360px] px-4 pt-7 pb-20 md:px-6">
+    <section id="panel-ringkasan" role="tabpanel" data-panel="ringkasan">@include('dashboard.partials.ringkasan')</section>
+    <section id="panel-per-data" role="tabpanel" data-panel="per-data" hidden>@include('dashboard.partials.per-data')</section>
+    <section id="panel-sebaran" role="tabpanel" data-panel="sebaran" hidden>@include('dashboard.partials.sebaran')</section>
+    <section id="panel-gabungan" role="tabpanel" data-panel="gabungan" hidden>@include('dashboard.partials.gabungan')</section>
+    <section id="panel-integrasi" role="tabpanel" data-panel="integrasi" hidden>@include('dashboard.partials.integrasi')</section>
+
+    <footer class="mt-16 flex flex-wrap items-center justify-between gap-2 border-t border-garis pt-5 text-xs text-ink-3">
+        <span>Dibaca dari database <code class="text-ink-2">kehutanan_dashboard</code> (replika) hasil pipeline ETL</span>
+    </footer>
+</main>
 @endsection

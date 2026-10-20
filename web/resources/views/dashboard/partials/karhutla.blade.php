@@ -1,20 +1,20 @@
 @use('App\Support\Format', 'F')
 
-<x-bagian id="karhutla" nomor="4" judul="Penggerus 1: kebakaran hutan dan lahan" sumber="D3 · SiPongi KLHK · XLSX · ha"
+<x-bagian id="karhutla" data-dataset="D3" hidden nomor="4" judul="Penggerus 1: kebakaran hutan dan lahan" sumber="D3 · SiPongi KLHK · XLSX · ha"
           sub="Luas indikatif kebakaran hutan dan lahan per provinsi. Data 2026 belum dipakai karena baru tercatat sampai Juli.">
-    <div class="mb-3 flex items-center gap-2 text-xs font-medium text-ink-2">
-        <label for="pilihTahunKarhutla">Tahun untuk peringkat provinsi</label>
-        <select id="pilihTahunKarhutla" class="rounded-lg border border-black/15 bg-white px-2.5 py-1.5 text-[13px] text-ink">
-            @foreach ($karhutla['tahun'] as $t)
-                <option value="{{ $t }}" @selected($t == $karhutla['puncak'])>{{ $t }}</option>
-            @endforeach
-        </select>
-    </div>
     <div class="grid gap-4 xl:grid-cols-2">
         <x-grafik id="chartKarhutlaTren" judul="Luas karhutla nasional per tahun"
                   ket="Dua tahun dengan kebakaran terluas diberi warna; tahun lain abu-abu" tinggi="h-80" />
-        <x-grafik id="chartKarhutlaProvinsi" judul="10 provinsi dengan karhutla terluas"
-                  ket="Ikut tahun yang dipilih di atas, ha" tinggi="h-80" />
+        <x-grafik id="chartKarhutlaProvinsi" judul="10 provinsi dengan karhutla terluas" ket="ha" tinggi="h-72">
+            <div class="mb-3 flex items-center gap-2">
+                <label for="pilihTahunKarhutla" class="text-xs text-ink-3">Tahun</label>
+                <select id="pilihTahunKarhutla" class="pilih py-1.5">
+                    @foreach ($karhutla['tahun'] as $t)
+                        <option value="{{ $t }}" @selected($t == $karhutla['puncak'])>{{ $t }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </x-grafik>
     </div>
 
     <x-insight>

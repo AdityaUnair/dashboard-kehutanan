@@ -72,7 +72,7 @@
             <div class="kartu-ket">Terakhir: {{ $sync->waktu }} · satu arah (BPS → database kita), hanya baris yang berubah yang diperbarui</div>
             <div class="grid gap-3 sm:grid-cols-3">
                 @foreach ([['Baris dicek', $sync->baris_dicek], ['Baru / berubah', $sync->baris_baru.' / '.$sync->baris_berubah], ['Sama (tidak disentuh)', $sync->baris_sama]] as [$label, $nilai])
-                    <div class="rounded-xl border border-grid bg-white px-4 py-3">
+                    <div class="rounded-xl border border-garis bg-surface-2 px-4 py-3">
                         <div class="text-xs text-ink-3">{{ $label }}</div>
                         <div class="mt-1 text-2xl font-bold">{{ $nilai }}</div>
                     </div>

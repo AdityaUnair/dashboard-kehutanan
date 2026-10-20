@@ -3,58 +3,62 @@
 @section('judul', 'Masuk · Dashboard Kehutanan')
 
 @section('isi')
-<div class="grid min-h-screen md:grid-cols-[1.1fr_1fr]">
-    <section class="flex flex-col justify-between gap-10 bg-brand-gelap p-8 text-white md:p-14">
-        <div>
-            <p class="text-[11px] font-semibold tracking-[0.18em] text-white/60 uppercase">Kelompok 3 · Integrasi Aplikasi Korporasi</p>
-            <h1 class="mt-4 max-w-md text-3xl leading-tight font-bold tracking-tight md:text-4xl">
-                Hutan Indonesia 2018–2025: berapa yang tersisa, dan apa yang menggerusnya?
+<div class="grid min-h-screen lg:grid-cols-[1.15fr_1fr]">
+    <section class="relative hidden overflow-hidden border-r border-garis bg-surface lg:flex lg:flex-col lg:justify-between lg:p-12">
+        <div class="pointer-events-none absolute -top-40 -left-40 size-[520px] rounded-full bg-brand/20 blur-3xl"></div>
+        <div class="relative flex items-center gap-2.5">
+            <span class="grid size-8 place-items-center rounded-lg bg-brand text-sm font-bold text-white">K3</span>
+            <span class="text-sm font-semibold">Dashboard Kehutanan</span>
+        </div>
+        <div class="relative">
+            <span class="lencana">Integrasi 5 sumber data · 2018–2025</span>
+            <h1 class="mt-5 max-w-lg text-4xl leading-[1.1] font-semibold tracking-tight">
+                Hutan Indonesia: berapa yang tersisa, dan apa yang menggerusnya?
             </h1>
-            <p class="mt-4 max-w-md text-[15px] text-white/70">
-                Lima sumber data kehutanan dari BPS dan KLHK disatukan lewat pipeline ETL ke satu database terpusat.
+            <p class="mt-4 max-w-md text-[15px] leading-relaxed text-ink-2">
+                Data BPS dan KLHK dalam tiga format disatukan lewat pipeline ETL ke satu database, lalu dianalisis di sini.
             </p>
         </div>
-        <dl class="grid max-w-md gap-2 text-[13px]">
-            @foreach ([
-                ['D1', 'Kawasan hutan', 'BPS · XLSX'],
-                ['D2', 'Tutupan lahan hutan', 'BPS/KLHK · CSV'],
-                ['D3', 'Kebakaran hutan & lahan', 'SiPongi · XLSX'],
-                ['D5', 'Deforestasi netto', 'BPS/KLHK · CSV'],
-            ] as [$kode, $nama, $sumber])
-                <div class="flex items-center gap-3 border-t border-white/10 pt-2">
-                    <dt class="w-7 font-semibold text-white/50">{{ $kode }}</dt>
-                    <dd class="flex-1 text-white/90">{{ $nama }}</dd>
-                    <dd class="text-white/50">{{ $sumber }}</dd>
+        <div class="relative grid max-w-lg grid-cols-5 gap-2 text-center">
+            @foreach ([['D1', 'Kawasan', 'XLSX'], ['D2', 'Tutupan', 'CSV'], ['D3', 'Karhutla', 'XLSX'], ['D4', 'Kayu', 'JSON'], ['D5', 'Deforestasi', 'CSV']] as [$k, $n, $f])
+                <div class="rounded-xl border border-garis bg-surface-2 px-2 py-3">
+                    <div class="text-[11px] font-semibold text-brand-teks">{{ $k }}</div>
+                    <div class="mt-1 text-[12px] font-medium">{{ $n }}</div>
+                    <div class="mt-0.5 text-[10.5px] text-ink-3">{{ $f }}</div>
                 </div>
             @endforeach
-        </dl>
+        </div>
     </section>
 
     <section class="grid place-items-center px-6 py-12">
         <form class="w-full max-w-sm" method="POST" action="{{ url('/login') }}">
             @csrf
-            <h2 class="text-2xl font-bold tracking-tight">Masuk</h2>
-            <p class="mt-1 text-sm text-ink-2">Gunakan akun yang terdaftar untuk membuka dashboard.</p>
+            <div class="mb-8 flex items-center gap-2.5 lg:hidden">
+                <span class="grid size-8 place-items-center rounded-lg bg-brand text-sm font-bold text-white">K3</span>
+                <span class="text-sm font-semibold">Dashboard Kehutanan</span>
+            </div>
+            <h2 class="text-2xl font-semibold tracking-tight">Masuk</h2>
+            <p class="mt-1.5 text-sm text-ink-2">Gunakan akun yang terdaftar untuk membuka dashboard.</p>
 
             @if ($errors->any())
-                <div class="mt-5 rounded-lg border border-turun/30 bg-turun/5 px-3 py-2.5 text-sm text-[#a33433]" role="alert">
+                <div class="mt-5 rounded-xl border border-peringatan/30 bg-peringatan-lembut px-3.5 py-2.5 text-sm text-peringatan" role="alert">
                     {{ $errors->first() }}
                 </div>
             @endif
 
-            <label for="email" class="mt-6 block text-xs font-semibold text-ink-2">Email</label>
+            <label for="email" class="mt-6 block text-xs font-medium text-ink-2">Email</label>
             <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username"
-                   class="mt-1.5 w-full rounded-lg border border-black/15 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20">
+                   class="mt-1.5 w-full rounded-xl border border-garis bg-surface-2 px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink-3 focus:border-brand focus:ring-4 focus:ring-brand/15">
 
-            <label for="password" class="mt-4 block text-xs font-semibold text-ink-2">Password</label>
+            <label for="password" class="mt-4 block text-xs font-medium text-ink-2">Password</label>
             <input id="password" type="password" name="password" required autocomplete="current-password"
-                   class="mt-1.5 w-full rounded-lg border border-black/15 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20">
+                   class="mt-1.5 w-full rounded-xl border border-garis bg-surface-2 px-3.5 py-2.5 text-sm text-ink outline-none focus:border-brand focus:ring-4 focus:ring-brand/15">
 
             <label class="mt-4 flex items-center gap-2 text-sm text-ink-2">
-                <input type="checkbox" name="ingat" value="1" class="size-4 rounded accent-brand"> Ingat saya
+                <input type="checkbox" name="ingat" value="1" class="size-4 rounded accent-[var(--brand)]"> Ingat saya
             </label>
 
-            <button type="submit" class="mt-6 w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-gelap">
+            <button type="submit" class="mt-6 w-full rounded-xl bg-brand py-2.5 text-sm font-semibold text-white transition hover:brightness-110">
                 Masuk
             </button>
         </form>

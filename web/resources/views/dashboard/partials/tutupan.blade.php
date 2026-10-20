@@ -5,7 +5,7 @@
     $akhir = $tutupan['nasional']->last();
 @endphp
 
-<x-bagian id="tutupan" nomor="2" judul="Kenyataan: tutupan hutan dari citra satelit" sumber="D2 · BPS/KLHK · CSV · ribu ha → ha"
+<x-bagian id="tutupan" data-dataset="D2" hidden nomor="2" judul="Kenyataan: tutupan hutan dari citra satelit" sumber="D2 · BPS/KLHK · CSV · ribu ha → ha"
           sub="Luas lahan yang benar-benar tertutup hutan (di dalam maupun di luar kawasan), hasil penafsiran citra satelit KLHK.">
     <div class="grid gap-4 xl:grid-cols-2">
         <x-grafik id="chartTutupanTren" judul="Tutupan hutan nasional, 2018–{{ $tutupan['tahun_akhir'] }}"

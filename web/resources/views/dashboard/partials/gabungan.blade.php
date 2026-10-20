@@ -11,22 +11,8 @@
     $rKayu = $benangMerah['r_kayu_defor'];
 @endphp
 
-<x-bagian id="tren-gabungan" nomor="G1" judul="Tren gabungan: semua data dalam satu skala" sumber="D2 + D3 + D4 + D5 · indeks"
-          sub="Satuan tiap data berbeda (ha, ha/tahun, m³) sehingga tidak boleh dijumlahkan atau digambar di dua sumbu. Setiap deret diubah menjadi indeks 2018 = 100 (nilai tahun itu ÷ nilai 2018 × 100) lalu digambar di satu sumbu.">
-    <x-grafik id="chartIndeks" judul="Indeks 2018 = 100"
-              ket="Garis abu-abu = 100 (sama dengan 2018). Deforestasi memakai tahun akhir periode (2018–2019 → 2019). Celah = data tidak tersedia."
-              tinggi="h-96" />
-    <x-insight>
-        <x-slot:terlihat>
-            Tutupan hutan dan produksi kayu bergerak pelan di sekitar 100, sementara karhutla melonjak tiga kali lipat pada 2019 dan dua kali lipat
-            pada 2023. Deforestasi anjlok ke sekitar seperempat level 2018 setelah 2019.
-        </x-slot:terlihat>
-        <x-slot:kenapa>
-            Karhutla dipicu cuaca (El Niño) sehingga naik-turun drastis, sedangkan produksi kayu dan tutupan hutan dipengaruhi faktor jangka panjang
-            seperti izin, penanaman, dan permintaan industri.
-        </x-slot:kenapa>
-    </x-insight>
-</x-bagian>
+<x-judul-panel judul="Analisis gabungan"
+               sub="Menyambungkan beberapa data sekaligus: hal-hal yang tidak terlihat bila tiap data dibaca sendiri-sendiri. Tren gabungan (indeks 2018 = 100) ada di halaman Ringkasan." />
 
 <x-bagian id="kawasan-vs-tutupan" nomor="G2" judul="Seharusnya vs kenyataan" sumber="D1 + D2 · {{ $kawasanVsTutupan['tahun'] }} · ha"
           sub="Luas kawasan hutan (status hukum) dibandingkan dengan luas tutupan hutan (citra satelit) di provinsi dan tahun yang sama.">
@@ -68,12 +54,12 @@
     <x-grafik id="chartBenangMerah" judul="Karhutla, deforestasi, dan produksi kayu per provinsi" ket="Warna = pulau utama; Kalimantan Utara digabung ke Kalimantan Timur" tinggi="h-[460px]">
         <div class="mb-4 grid gap-3 sm:grid-cols-3">
             @foreach ([['Korelasi karhutla ↔ deforestasi', $rKarhutla], ['Korelasi produksi kayu ↔ deforestasi', $rKayu]] as [$label, $r])
-                <div class="rounded-xl border border-grid bg-white px-4 py-3">
+                <div class="rounded-xl border border-garis bg-surface-2 px-4 py-3">
                     <div class="text-xs text-ink-3">{{ $label }}</div>
                     <div class="mt-1 text-xl font-bold">r = {{ F::angka($r, 2) }} <span class="text-xs font-medium text-ink-3">hubungan {{ $kekuatan($r) }}</span></div>
                 </div>
             @endforeach
-            <div class="rounded-xl border border-grid bg-white px-4 py-3">
+            <div class="rounded-xl border border-garis bg-surface-2 px-4 py-3">
                 <div class="text-xs text-ink-3">Jumlah provinsi (titik)</div>
                 <div class="mt-1 text-xl font-bold">{{ $benangMerah['titik']->count() }}</div>
             </div>
@@ -106,7 +92,7 @@
                 ['Perkiraan dari deforestasi netto 2018–2022 (D5)', $validasi['perkiraan_dari_deforestasi']],
                 ['Selisih kedua sumber', $validasi['selisih']],
             ] as [$label, $nilai])
-                <div class="rounded-xl border border-grid bg-white px-4 py-3">
+                <div class="rounded-xl border border-garis bg-surface-2 px-4 py-3">
                     <div class="text-xs text-ink-3">{{ $label }}</div>
                     <div class="mt-1 text-2xl font-bold tracking-tight">{{ $nilai > 0 ? '+' : '' }}{{ F::ringkas($nilai) }} <span class="text-sm font-medium text-ink-3">ha</span></div>
                 </div>

@@ -1,16 +1,17 @@
 @use('App\Support\Format', 'F')
 
-    <div class="mb-3 flex items-center gap-2 text-xs font-medium text-ink-2">
-        <label for="pilihTahunKayu">Tahun untuk peringkat provinsi</label>
-        <select id="pilihTahunKayu" class="rounded-lg border border-black/15 bg-white px-2.5 py-1.5 text-[13px] text-ink">
-            @foreach ($kayu['tahun'] as $t)
-                <option value="{{ $t }}" @selected($loop->last)>{{ $t }}</option>
-            @endforeach
-        </select>
-    </div>
     <div class="grid gap-4 xl:grid-cols-2">
         <x-grafik id="chartKayuTren" judul="Produksi kayu bulat nasional per tahun" ket="m³" tinggi="h-80" />
-        <x-grafik id="chartKayuProvinsi" judul="10 provinsi produsen kayu terbesar" ket="Ikut tahun yang dipilih di atas, m³" tinggi="h-80" />
+        <x-grafik id="chartKayuProvinsi" judul="10 provinsi produsen kayu terbesar" ket="m³" tinggi="h-72">
+            <div class="mb-3 flex items-center gap-2">
+                <label for="pilihTahunKayu" class="text-xs text-ink-3">Tahun</label>
+                <select id="pilihTahunKayu" class="pilih py-1.5">
+                    @foreach ($kayu['tahun'] as $t)
+                        <option value="{{ $t }}" @selected($loop->last)>{{ $t }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </x-grafik>
     </div>
 
     <x-insight>
