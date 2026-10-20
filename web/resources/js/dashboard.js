@@ -427,26 +427,32 @@ DEF.chartKarhutlaProvinsi = peringkatProvinsi(D.karhutla, () => warnaData().karh
 DEF.chartKayuTren = trenNasional(D.kayu, () => warnaData().kayu, 'm³');
 DEF.chartKayuProvinsi = peringkatProvinsi(D.kayu, () => warnaData().kayu, 'm³', 'pilihTahunKayu');
 
-// ---- G2 dari mana kenaikan tutupan hutan (D1 + D2 + D5)
-DEF.chartNeracaHutan = () => {
-    const kp = D.neraca.komponen;
-    const terkecil = Math.min(0, ...kp.map((k) => k.nilai));
+// ---- G2 validasi silang: urutan batang mengikuti langkah membaca di panel kanan (1 D5 -> 2 D2 -> 3 rincian D1)
+DEF.chartValidasi = () => {
+    const v = D.validasi;
+    const batang = [
+        ['1 · Hutan hilang menurut D5', -v.hilang_d5, 'utama'],
+        ['2 · Perubahan total hutan · D2', v.total_d2, 'utama'],
+        ['3 · Hutan sekunder · D1', v.jenis_d1.sekunder, 'rincian'],
+        ['3 · Hutan tanaman · D1', v.jenis_d1.tanaman, 'rincian'],
+        ['3 · Hutan primer · D1', v.jenis_d1.primer, 'rincian'],
+    ];
+    // rincian D1 = bagian dari batang ② -> warna sama tapi lebih muda
+    const warna = ([, n, jenis]) => { const w = n < 0 ? W.turun : W.naik; return jenis === 'utama' ? w : transparan(w, 0.5); };
+    const terkecil = Math.min(0, ...batang.map(([, n]) => n));
     return {
         type: 'bar',
-        data: {
-            labels: kp.map((k) => `${k.label} · ${k.kode}`),
-            datasets: [{ label: 'Perubahan (ha)', data: kp.map((k) => k.nilai), backgroundColor: kp.map((k) => (k.nilai < 0 ? W.turun : W.naik)), ...gayaBatang, maxBarThickness: 34, borderSkipped: false }],
-        },
+        data: { labels: batang.map(([l]) => l), datasets: [{ label: 'Perubahan (ha)', data: batang.map(([, n]) => n), backgroundColor: batang.map(warna), ...gayaBatang, maxBarThickness: 34, borderSkipped: false }] },
         options: {
             indexAxis: 'y',
             layout: { padding: { right: 56 } },
             // ruang ekstra di kiri agar label batang negatif tidak menabrak nama kategori
-            scales: { x: { ...sumbuRingkas(), grace: '10%', min: terkecil * 1.6, ticks: { ...sumbuRingkas().ticks, callback: (v) => (v > 0 ? '+' : '') + ringkas(v) } }, y: { ...tanpaKisi, ticks: { autoSkip: false } } },
+            scales: { x: { ...sumbuRingkas(), grace: '10%', min: terkecil * 1.6, ticks: { ...sumbuRingkas().ticks, callback: (n) => (n > 0 ? '+' : '') + ringkas(n) } }, y: { ...tanpaKisi, ticks: { autoSkip: false, color: W.tinta2 } } },
             plugins: {
                 legend: { display: false },
                 tooltip: { callbacks: { label: (c) => ` ${c.parsed.x > 0 ? '+' : ''}${fmt.format(c.parsed.x)} ha` } },
                 garisAcuan: { nilai: 0 },
-                labelUjungBatang: { aktif: true, format: (v) => (v > 0 ? '+' : '') + ringkas(v) },
+                labelUjungBatang: { aktif: true, format: (n) => (n > 0 ? '+' : '') + ringkas(n) },
             },
         },
     };

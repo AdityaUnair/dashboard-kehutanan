@@ -16,16 +16,15 @@ class DashboardController extends Controller
             'karhutla' => $data->karhutla(),
             'kayu' => $data->produksiKayu(),
             'indeks' => $data->indeksGabungan(),
-            'neraca' => $data->neracaHutan(),
             'benangMerah' => $data->benangMerahProvinsi(),
-            'validasi' => $data->validasiTutupanVsDeforestasi(),
+            'validasi' => $data->validasiSilang(),
             'sebaran' => $data->sebaran(),
             'integrasi' => $data->statusIntegrasi(),
         ];
 
         // Data yang dikirim ke JavaScript (Chart.js & peta sebaran)
         $halaman['grafik'] = collect($halaman)->only([
-            'kelas', 'tutupan', 'deforestasi', 'karhutla', 'kayu', 'indeks', 'neraca', 'benangMerah', 'sebaran',
+            'kelas', 'tutupan', 'deforestasi', 'karhutla', 'kayu', 'indeks', 'validasi', 'benangMerah', 'sebaran',
         ])->put('deret', $halaman['kpi']['deret']);
 
         return view('dashboard.index', $halaman);

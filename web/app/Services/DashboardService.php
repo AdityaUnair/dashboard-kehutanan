@@ -271,22 +271,27 @@ class DashboardService
         return ['tahun' => $tahun, 'deret' => $hasil, 'label_tahun' => [self::KARHUTLA_PARSIAL => self::LABEL_PARSIAL]];
     }
 
-    /** G2: dari mana perubahan tutupan hutan 2018-2022? Total (D2) dipecah per jenis hutan (D1), dibandingkan deforestasi netto (D5). */
-    public function neracaHutan(): array
+    /**
+     * G2: validasi silang 2018-2022 (irisan ketiga data). Kalau hutan hilang (D5), tutupan hutan (D2) seharusnya turun;
+     * rincian per jenis hutan (D1) dipakai untuk melihat dari mana perubahan D2 berasal.
+     */
+    public function validasiSilang(): array
     {
         [$awal, $akhir] = [self::TAHUN_AWAL, 2022];
         $ubah = fn (Collection $d) => (float) ($d[$akhir] - $d[$awal]);
         $d2 = TutupanLahan::whereIn('tahun', [$awal, $akhir])->selectRaw('tahun, SUM(hutan_ha) v')->groupBy('tahun')->pluck('v', 'tahun');
-        $defor = (float) Deforestasi::where('tahun_awal', '>=', $awal)->where('tahun_akhir', '<=', $akhir)->sum('total_ha');
+        $hilang = (float) Deforestasi::where('tahun_awal', '>=', $awal)->where('tahun_akhir', '<=', $akhir)->sum('total_ha');
+        $total = $ubah($d2);
 
         return [
             'periode' => "{$awal}–{$akhir}",
-            'komponen' => [
-                ['label' => 'Total tutupan hutan', 'kode' => 'D2', 'nilai' => $ubah($d2)],
-                ['label' => 'Hutan sekunder', 'kode' => 'D1', 'nilai' => $ubah($this->deretJenis('sekunder'))],
-                ['label' => 'Hutan tanaman', 'kode' => 'D1', 'nilai' => $ubah($this->deretJenis('tanaman'))],
-                ['label' => 'Hutan primer', 'kode' => 'D1', 'nilai' => $ubah($this->deretJenis('primer'))],
-                ['label' => 'Deforestasi netto (hutan hilang)', 'kode' => 'D5', 'nilai' => -$defor],
+            'hilang_d5' => $hilang,
+            'total_d2' => $total,
+            'selisih' => $total + $hilang,
+            'jenis_d1' => [
+                'sekunder' => $ubah($this->deretJenis('sekunder')),
+                'tanaman' => $ubah($this->deretJenis('tanaman')),
+                'primer' => $ubah($this->deretJenis('primer')),
             ],
         ];
     }
@@ -338,20 +343,6 @@ class DashboardService
         }
 
         return $sxx && $syy ? $sxy / sqrt($sxx * $syy) : null;
-    }
-
-    /** G4: validasi silang - perubahan tutupan hutan (D2) vs total deforestasi netto (D5) untuk 2018-2022. */
-    public function validasiTutupanVsDeforestasi(): array
-    {
-        $h2018 = (float) TutupanLahan::where('tahun', 2018)->sum('hutan_ha');
-        $h2022 = (float) TutupanLahan::where('tahun', 2022)->sum('hutan_ha');
-        $defor = (float) Deforestasi::where('tahun_awal', '>=', 2018)->where('tahun_akhir', '<=', 2022)->sum('total_ha');
-
-        return [
-            'perubahan_tutupan' => $h2022 - $h2018,
-            'perkiraan_dari_deforestasi' => -$defor,
-            'selisih' => ($h2022 - $h2018) + $defor,
-        ];
     }
 
     // ------------------------------------------------------------------ Peta sebaran

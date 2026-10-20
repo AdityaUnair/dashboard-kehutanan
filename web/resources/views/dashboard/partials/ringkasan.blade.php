@@ -24,7 +24,7 @@
         ['benang-merah', 'kayu', 'Produksi kayu paling dekat dengan deforestasi',
             'Antarprovinsi, kayu ↔ deforestasi r = '.F::angka($benangMerah['r_kayu_defor'], 2).', lebih kuat dari karhutla ↔ deforestasi (r = '.F::angka($benangMerah['r_karhutla_defor'], 2).').'],
         ['validasi', 'lapisan', 'Dua sumber resmi tidak sepakat',
-            'Tutupan hutan (D2) naik '.F::ringkas($validasi['perubahan_tutupan']).' ha, padahal deforestasi netto (D5) menunjukkan hutan berkurang.'],
+            'Tutupan hutan (D2) naik '.F::ringkas($validasi['total_d2']).' ha ('.$validasi['periode'].'), padahal deforestasi netto (D5) menunjukkan hutan berkurang.'],
     ];
     $panelIndeks = [
         ['Hutan primer (D1)', 'primer', 'pohon'], ['Tutupan hutan (D2)', 'tutupan', 'daun'], ['Karhutla (D3)', 'karhutla', 'api'],

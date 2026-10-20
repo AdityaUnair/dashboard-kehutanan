@@ -15,43 +15,40 @@
                sub="Hal-hal yang baru terlihat bila beberapa data disambungkan. Tren gabungan (indeks 2018 = 100) ada di Ringkasan." />
 
 <div class="grid items-start gap-3 xl:grid-cols-3">
-    {{-- G2: dari mana kenaikan tutupan hutan --}}
-    @php [$g2Total, $g2Sekunder, $g2Tanaman, $g2Primer, $g2Defor] = array_column($neraca['komponen'], 'nilai'); @endphp
-    <x-grafik id="chartNeracaHutan" jangkar="neraca-hutan" kode="G2" ikon="lapisan" class="xl:col-span-2" tinggi="h-[300px]"
-              judul="Hutan bertambah dari mana? Perubahan {{ str_replace('–', ' → ', $neraca['periode']) }}"
-              ket="D1 + D2 + D5 · ha · nasional · {{ $neraca['periode'] }} (irisan ketiga data) · hijau = bertambah, merah karat = berkurang">
+    {{-- G2: validasi silang D5 -> D2 -> D1, dibaca berurutan mengikuti nomor --}}
+    @php
+        $v = $validasi;
+        $langkah = [
+            ['1', 'Harapan dari D5', 'Deforestasi netto mencatat <b>'.F::ringkas($v['hilang_d5']).' ha</b> hutan hilang selama '.$v['periode'].'. Kalau benar, tutupan hutan mestinya turun kira-kira sebanyak itu.'],
+            ['2', 'Kenyataan di D2', 'Tutupan hutan justru <b>naik '.F::ringkas($v['total_d2']).' ha</b>. Selisih kedua data '.F::ringkas($v['selisih']).' ha, jadi keduanya <b>tidak cocok</b>.'],
+            ['3', 'Petunjuk dari D1', 'Kenaikan itu datang dari hutan sekunder (+'.F::ringkas($v['jenis_d1']['sekunder']).') dan hutan tanaman (+'.F::ringkas($v['jenis_d1']['tanaman']).'). Hutan primer nyaris tetap ('.F::ringkas($v['jenis_d1']['primer']).'), jadi hutan yang hilang menurut D5 tidak tampak sebagai turunnya hutan primer.'],
+        ];
+    @endphp
+    <x-grafik id="chartValidasi" jangkar="validasi" kode="G2" ikon="lapisan" class="xl:col-span-2" tinggi="h-[350px]"
+              judul="Validasi silang: hutan berkurang atau bertambah, {{ str_replace('–', ' → ', $v['periode']) }}?"
+              ket="D1 + D2 + D5 · ha · nasional · {{ $v['periode'] }} (irisan ketiga data) · baca berurutan 1 → 3 bersama panel kanan">
         <x-slot:ringkas>
-            Kenaikan tutupan hutan {{ F::ringkas($g2Total) }} ha hampir seluruhnya berasal dari hutan sekunder dan hutan tanaman; hutan primer nyaris tetap
-            ({{ F::ringkas($g2Primer) }} ha), padahal D5 mencatat {{ F::ringkas(abs($g2Defor)) }} ha hutan hilang.
+            D5 bilang hutan berkurang {{ F::ringkas($v['hilang_d5']) }} ha, D2 bilang bertambah {{ F::ringkas($v['total_d2']) }} ha. D1 menunjukkan tambahan itu
+            berasal dari hutan sekunder dan hutan tanaman, bukan hutan primer.
         </x-slot:ringkas>
     </x-grafik>
 
-    <div class="kartu flex flex-col">
-        <div class="kartu-judul"><span class="mr-1 text-ink-3">G2</span>Rincian perubahan, {{ $neraca['periode'] }}</div>
-        <div class="kartu-ket">Angka asli dari database (ha)</div>
-        <table class="tabel-data">
-            <thead><tr><th>Komponen</th><th>Data</th><th class="angka">Perubahan (ha)</th></tr></thead>
-            <tbody>
-            @foreach ($neraca['komponen'] as $k)
-                <tr>
-                    <td class="text-ink">{{ $k['label'] }}</td>
-                    <td>{{ $k['kode'] }}</td>
-                    <td class="angka font-semibold text-ink">{{ $k['nilai'] > 0 ? '+' : '' }}{{ F::angka($k['nilai'], 1) }}</td>
-                </tr>
+    <div class="kartu border-peringatan/30 bg-peringatan-lembut">
+        <div class="kartu-judul"><span class="mr-1 text-ink-3">G2</span>Cara membaca: apakah D2 dan D5 sepakat?</div>
+        <ol class="mt-3 grid gap-3 text-[12.5px] leading-relaxed text-ink-2">
+            @foreach ($langkah as [$no, $judulLangkah, $isi])
+                <li class="flex gap-2.5">
+                    <span class="grid size-6 shrink-0 place-items-center rounded-full bg-surface text-[12px] font-bold text-peringatan shadow-[inset_0_0_0_1px_var(--garis)]">{{ $no }}</span>
+                    <span><b class="block font-semibold text-ink">{{ $judulLangkah }}</b>{!! $isi !!}</span>
+                </li>
             @endforeach
-            </tbody>
-        </table>
-        <x-insight class="mt-auto border-0 bg-surface-2">
-            <x-slot:terlihat>
-                Hutan sekunder (+{{ F::ringkas($g2Sekunder) }}) dan hutan tanaman (+{{ F::ringkas($g2Tanaman) }}) menyumbang hampir seluruh kenaikan total.
-                Hilangnya hutan menurut D5 tidak tampak sebagai turunnya hutan primer di D1.
-            </x-slot:terlihat>
-            <x-slot:kenapa>
-                Deforestasi netto sudah dikurangi hutan yang tumbuh kembali, jadi seharusnya searah dengan perubahan total. Bahwa D2 dan D1 justru naik
-                memperkuat dugaan di G4: dua kelompok buku KLHK ini dihitung dengan cara berbeda. Ini kesimpulan kami dari penggabungan data, bukan
-                pernyataan BPS/KLHK.
-            </x-slot:kenapa>
-        </x-insight>
+        </ol>
+        <div class="mt-3 rounded-xl bg-surface/70 p-3 text-[12.5px] leading-relaxed text-ink-2">
+            <b class="block font-semibold text-ink">Kesimpulan (dugaan kami)</b>
+            Kemungkinan kedua kelompok data dihitung dengan cara berbeda: D1 dan D2 dari buku <em>Rekalkulasi Penutupan Lahan</em> (semua tahun
+            dihitung ulang), D5 dari buku deforestasi per periode yang terbit lebih dulu. Ini kesimpulan kami dari penggabungan data, bukan
+            pernyataan BPS/KLHK. Perbedaan seperti ini baru terlihat setelah data digabung; dibaca terpisah, masing-masing tampak wajar.
+        </div>
     </div>
 
     {{-- G3: benang merah --}}
@@ -98,43 +95,18 @@
         </x-slot:info>
     </x-grafik>
 
-    {{-- G3 angka korelasi + G4 validasi silang --}}
+    {{-- G3: angka korelasi --}}
     <div class="grid content-start gap-3">
-        <div class="grid grid-cols-3 gap-2">
-            @foreach ([['r karhutla ↔ defor.', F::angka($rKarhutla, 2), 'hubungan '.$kekuatan($rKarhutla)], ['r kayu ↔ defor.', F::angka($rKayu, 2), 'hubungan '.$kekuatan($rKayu)], ['Provinsi (titik)', $benangMerah['titik']->count(), 'di grafik G3']] as [$label, $nilai, $arti])
-                <div class="kartu p-3">
-                    <div class="text-[11px] leading-tight text-ink-3">{{ $label }}</div>
-                    <div class="mt-1 text-xl font-bold">{{ $nilai }}</div>
+        @foreach ([['r karhutla ↔ deforestasi', F::angka($rKarhutla, 2), 'hubungan '.$kekuatan($rKarhutla)], ['r produksi kayu ↔ deforestasi', F::angka($rKayu, 2), 'hubungan '.$kekuatan($rKayu)], ['Provinsi (titik)', $benangMerah['titik']->count(), 'di grafik G3, '.$benangMerah['periode']]] as [$label, $nilai, $arti])
+            <div class="kartu flex items-center justify-between gap-3 p-3.5">
+                <div>
+                    <div class="text-[12px] text-ink-2"><span class="mr-1 text-ink-3">G3</span>{{ $label }}</div>
                     <div class="text-[11px] text-ink-3">{{ $arti }}</div>
                 </div>
-            @endforeach
-        </div>
-
-        <div id="validasi" class="kartu scroll-mt-28 border-peringatan/30 bg-peringatan-lembut">
-            <div class="kartu-judul"><span class="mr-1 text-ink-3">G4</span>Validasi silang: apakah D2 dan D5 sepakat?</div>
-            <div class="kartu-ket">2018–2022 · kalau hutan hilang (D5), luas hutan di D2 seharusnya ikut berkurang</div>
-            <dl class="grid gap-1.5 text-[12.5px]">
-                @foreach ([
-                    ['D2: perubahan luas hutan 2018 → 2022', $validasi['perubahan_tutupan']],
-                    ['D5: hutan hilang 2018–2022 (perkiraan perubahan)', $validasi['perkiraan_dari_deforestasi']],
-                    ['Selisih kedua data', $validasi['selisih']],
-                ] as [$label, $nilai])
-                    <div class="flex items-baseline justify-between gap-3 border-b border-peringatan/15 pb-1.5 last:border-0">
-                        <dt class="text-ink-2">{{ $label }}</dt>
-                        <dd class="font-semibold whitespace-nowrap text-ink tabular-nums">{{ $nilai > 0 ? '+' : '' }}{{ F::ringkas($nilai) }} ha</dd>
-                    </div>
-                @endforeach
-            </dl>
-            <x-insight :peringatan="true" class="mt-3 border-0 bg-transparent p-0">
-                <p><b>Temuan</b><span>Dua data resmi ini <strong>tidak cocok</strong>: menurut D5 hutan berkurang sekitar
-                    {{ F::ringkas(abs($validasi['perkiraan_dari_deforestasi'])) }} ha, menurut D2 justru bertambah {{ F::ringkas($validasi['perubahan_tutupan']) }} ha.</span></p>
-                <x-slot:kenapa>
-                    Kemungkinan karena cara menghitungnya berbeda. Tabel D2 bersumber dari buku <em>Rekalkulasi Penutupan Lahan 2023</em> (semua
-                    tahun dihitung ulang), sedangkan D5 dari buku-buku deforestasi per periode yang terbit lebih dulu. Perbedaan ini baru kelihatan
-                    setelah kedua data digabung; kalau dibaca terpisah, masing-masing tampak wajar. G2 memperlihatkan dari mana kenaikan D2 berasal
-                (hutan sekunder dan hutan tanaman, menurut D1).
-                </x-slot:kenapa>
-            </x-insight>
-        </div>
+                <div class="text-2xl font-bold tabular-nums">{{ $nilai }}</div>
+            </div>
+        @endforeach
+        <p class="px-1 text-[11.5px] leading-relaxed text-ink-3">r = koefisien korelasi Pearson antarprovinsi: mendekati 1 = searah kuat, mendekati 0 = tidak ada hubungan.
+            Korelasi bukan sebab-akibat.</p>
     </div>
 </div>
