@@ -24,6 +24,7 @@
     ];
     // panah antar-simpul: [nama tahap, teknik EAI?]
     $panah = [['Extract', false], ['Transformation', true], ['Replication', true], ['Dibaca', false]];
+    $ikonDs = ['D1' => 'pohon', 'D2' => 'daun', 'D3' => 'api', 'D4' => 'kayu', 'D5' => 'kapak'];
 @endphp
 
 {{-- Alur integrasi: mendatar di layar lebar, menurun di layar kecil. Synchronization masuk ke Master dari bawah. --}}
@@ -35,6 +36,13 @@
                 <div class="flex items-center gap-2 text-[13px] font-semibold text-ink"><x-ikon :nama="$ikon" class="size-4 text-brand-teks" />{{ $judulSimpul }}</div>
                 <div class="mt-1 text-[11.5px] leading-snug text-ink-3">{{ $ketSimpul }}</div>
                 <div class="mt-1.5 text-[12px] font-medium text-ink-2">{{ $angka }}</div>
+                @if ($kunci === 'sumber')
+                    <div class="mt-2 flex flex-wrap gap-1">
+                        @foreach (['D1', 'D2', 'D3', 'D4', 'D5'] as $kd)
+                            <span data-ds="{{ $kd }}" class="lencana-ds">{{ $kd }}</span>
+                        @endforeach
+                    </div>
+                @endif
             </div>
             @if ($kunci === 'master')
                 {{-- cabang Synchronization: di layar lebar berada tepat di bawah kotak Master --}}
@@ -97,8 +105,13 @@
                 <thead><tr><th>Kode</th><th>Data</th><th>Penerbit</th><th>Format</th><th>Cara extract</th></tr></thead>
                 <tbody>
                 @foreach ($integrasi['sumber'] as $s)
-                    <tr><td class="font-semibold text-ink">{{ $s['kode'] }}</td><td>{{ $s['nama'] }}</td><td>{{ $s['penerbit'] }}</td>
-                        <td><span class="pil-ok">{{ $s['format'] }}</span></td><td>{{ $s['cara'] }}</td></tr>
+                    <tr data-ds="{{ $s['kode'] }}">
+                        <td><span class="lencana-ds"><x-ikon :nama="$ikonDs[$s['kode']] ?? 'pohon'" class="size-3" />{{ $s['kode'] }}</span></td>
+                        <td class="font-medium text-ink">{{ $s['nama'] }}</td>
+                        <td>{{ $s['penerbit'] }}</td>
+                        <td><span class="lencana-ds">{{ $s['format'] }}</span></td>
+                        <td>{{ $s['cara'] }}</td>
+                    </tr>
                 @endforeach
                 </tbody>
             </table>
@@ -112,8 +125,8 @@
                     <thead><tr><th>Data</th><th class="angka">Dicek</th><th class="angka">Baru</th><th class="angka">Berubah</th><th class="angka">Dihapus</th><th class="angka">Sama</th></tr></thead>
                     <tbody>
                     @foreach ($sync as $s)
-                        <tr>
-                            <td class="font-semibold text-ink">{{ $s->dataset }}</td>
+                        <tr data-ds="{{ $s->dataset }}">
+                            <td><span class="lencana-ds">{{ $s->dataset }}</span></td>
                             <td class="angka">{{ $s->baris_dicek }}</td>
                             <td class="angka">{{ $s->baris_baru }}</td>
                             <td class="angka">{{ $s->baris_berubah }}</td>
@@ -184,9 +197,15 @@
                 <thead><tr><th>Tahap</th><th>Data</th><th class="angka">Masuk</th><th class="angka">Dimuat</th><th class="angka">Dibuang</th><th>Status</th><th>Catatan</th></tr></thead>
                 <tbody>
                 @foreach ($integrasi['etl'] as $l)
-                    <tr>
+                    <tr @if (in_array($l->dataset, ['D1', 'D2', 'D3', 'D4', 'D5'])) data-ds="{{ $l->dataset }}" @endif>
                         <td>{{ $l->tahap }}</td>
-                        <td class="font-semibold text-ink">{{ $l->dataset }}</td>
+                        <td>
+                            @if (in_array($l->dataset, ['D1', 'D2', 'D3', 'D4', 'D5']))
+                                <span class="lencana-ds">{{ $l->dataset }}</span>
+                            @else
+                                <span class="font-semibold text-ink">{{ $l->dataset }}</span>
+                            @endif
+                        </td>
                         <td class="angka">{{ $l->baris_masuk }}</td>
                         <td class="angka">{{ $l->baris_dimuat }}</td>
                         <td class="angka">{{ $l->baris_dibuang }}</td>

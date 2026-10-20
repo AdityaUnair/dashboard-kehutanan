@@ -12,9 +12,14 @@
 @endphp
 
 <x-judul-panel judul="Analisis gabungan"
-               sub="Hal-hal yang baru terlihat bila beberapa data disambungkan. Tren gabungan (indeks 2018 = 100) ada di Ringkasan." />
+               sub="Hal-hal yang baru terlihat bila beberapa data disambungkan. Tren gabungan (indeks 2018 = 100) ada di Ringkasan.">
+    <div class="flex flex-wrap items-center gap-1.5">
+        <span data-ds="G2" class="lencana-ds"><x-ikon nama="api" class="size-3" /> G2 · D3 × D5</span>
+        <span data-ds="G3" class="lencana-ds"><x-ikon nama="lapisan" class="size-3" /> G3 · D3 × D4 × D5</span>
+    </div>
+</x-judul-panel>
 
-<div class="grid items-start gap-3 xl:grid-cols-3">
+<div class="grid items-start gap-4 xl:grid-cols-3">
     {{-- G2: kebakaran vs hutan hilang (D3 + D5), dua garis di satu sumbu hektar --}}
     @php
         $ah = $apiHutan;
@@ -30,18 +35,44 @@
         </x-slot:ringkas>
     </x-grafik>
 
-    <div class="kartu flex flex-col">
-        <div class="kartu-judul"><span class="mr-1 text-ink-3">G2</span>Kebakaran dan hutan hilang bergerak searah</div>
-        <div class="mt-3 grid grid-cols-2 gap-2">
-            <div class="rounded-xl bg-surface-2 p-3">
-                <div class="text-[11px] text-ink-3">Puncak {{ $ah['puncak']['tahun'] }}: karhutla</div>
-                <div class="mt-0.5 text-xl font-bold tabular-nums">{{ F::ringkas($ah['puncak']['karhutla']) }} <span class="text-xs font-normal text-ink-3">ha</span></div>
+    {{-- Kartu pendamping G2: angka puncak D3 dan D5 --}}
+    <div data-ds="G2" class="kartu flex flex-col">
+        <div class="flex items-center justify-between gap-2">
+            <div class="kartu-judul flex items-center gap-1.5">
+                <span class="lencana-ds">G2</span>
+                <span>Kebakaran dan hutan hilang bergerak searah</span>
             </div>
-            <div class="rounded-xl bg-surface-2 p-3">
-                <div class="text-[11px] text-ink-3">Deforestasi {{ $ah['puncak']['tahun'] - 1 }}–{{ $ah['puncak']['tahun'] }}</div>
-                <div class="mt-0.5 text-xl font-bold tabular-nums">{{ F::ringkas($ah['puncak']['deforestasi']) }} <span class="text-xs font-normal text-ink-3">ha/th</span></div>
+            <div class="flex items-center -space-x-1">
+                <span data-ds="D3" class="ikon-ds size-6 rounded-full"><x-ikon nama="api" class="size-3.5" /></span>
+                <span data-ds="D5" class="ikon-ds size-6 rounded-full"><x-ikon nama="kapak" class="size-3.5" /></span>
             </div>
         </div>
+
+        <div class="mt-3 grid grid-cols-2 gap-2.5">
+            {{-- Kotak metrik D3 Karhutla --}}
+            <div data-ds="D3" class="subkartu-ds">
+                <div class="flex items-center justify-between gap-1">
+                    <span class="lencana-ds">D3</span>
+                    <x-ikon nama="api" class="size-3.5 text-[var(--ds-teks)]" />
+                </div>
+                <div class="mt-1.5 text-[11px] font-medium text-ink-2">Puncak {{ $ah['puncak']['tahun'] }}: karhutla</div>
+                <div class="mt-0.5 text-xl font-bold tabular-nums">
+                    {{ F::ringkas($ah['puncak']['karhutla']) }} <span class="text-xs font-normal text-ink-3">ha</span>
+                </div>
+            </div>
+            {{-- Kotak metrik D5 Deforestasi --}}
+            <div data-ds="D5" class="subkartu-ds">
+                <div class="flex items-center justify-between gap-1">
+                    <span class="lencana-ds">D5</span>
+                    <x-ikon nama="kapak" class="size-3.5 text-[var(--ds-teks)]" />
+                </div>
+                <div class="mt-1.5 text-[11px] font-medium text-ink-2">Deforestasi {{ $ah['puncak']['tahun'] - 1 }}–{{ $ah['puncak']['tahun'] }}</div>
+                <div class="mt-0.5 text-xl font-bold tabular-nums">
+                    {{ F::ringkas($ah['puncak']['deforestasi']) }} <span class="text-xs font-normal text-ink-3">ha/th</span>
+                </div>
+            </div>
+        </div>
+
         <x-insight :lipat="false" class="mt-3 border-0 bg-transparent p-0">
             <x-slot:terlihat>
                 Tahun kebakaran terbesar ({{ $ah['puncak']['tahun'] }}) juga periode deforestasi tertinggi. Setelah itu kebakaran mengecil dan deforestasi
@@ -57,10 +88,22 @@
         </x-insight>
     </div>
 
-    {{-- G3: benang merah --}}
+    {{-- G3: benang merah (sintesis 3 dataset: D3 Karhutla + D4 Kayu + D5 Deforestasi) --}}
     <x-grafik id="chartBenangMerah" jangkar="benang-merah" kode="G3" ikon="lapisan" class="xl:col-span-2" tinggi="h-[340px]"
               judul="Benang merah per provinsi: karhutla, deforestasi, dan produksi kayu"
-              ket="D3 + D4 + D5 · {{ $benangMerah['periode'] }} · titik = provinsi, X = total karhutla, Y = total deforestasi netto, ukuran = produksi kayu, warna = pulau">
+              ket="D3 + D4 + D5 · {{ $benangMerah['periode'] }} · titik = provinsi, warna = pulau">
+        {{-- Pita pemetaan visual 3 dimensi dataset pada grafik gelembung G3 --}}
+        <div class="mb-2 flex flex-wrap items-center gap-2">
+            <span data-ds="D3" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--ds-garis)] bg-[var(--ds-lembut)] px-2.5 py-1 text-[11px] font-medium text-[var(--ds-teks)]">
+                <x-ikon nama="api" class="size-3.5" /> <b>Sumbu X:</b> Karhutla (D3)
+            </span>
+            <span data-ds="D5" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--ds-garis)] bg-[var(--ds-lembut)] px-2.5 py-1 text-[11px] font-medium text-[var(--ds-teks)]">
+                <x-ikon nama="kapak" class="size-3.5" /> <b>Sumbu Y:</b> Deforestasi (D5)
+            </span>
+            <span data-ds="D4" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--ds-garis)] bg-[var(--ds-lembut)] px-2.5 py-1 text-[11px] font-medium text-[var(--ds-teks)]">
+                <x-ikon nama="kayu" class="size-3.5" /> <b>Ukuran Gelembung:</b> Produksi Kayu (D4)
+            </span>
+        </div>
         <x-slot:ringkas>
             @if ($rKayu > $rKarhutla)
                 Produksi kayu lebih erat hubungannya dengan deforestasi (r = {{ F::angka($rKayu, 2) }}, {{ $kekuatan($rKayu) }}) dibanding karhutla
@@ -101,12 +144,28 @@
         </x-slot:info>
     </x-grafik>
 
-    {{-- G3: angka korelasi --}}
+    {{-- G3: angka korelasi; lencana menunjukkan pasangan data yang dikorelasikan --}}
+    @php
+        $kartuG3 = [
+            [['D3', 'api'], 'r karhutla ↔ deforestasi', F::angka($rKarhutla, 2), 'hubungan '.$kekuatan($rKarhutla)],
+            [['D4', 'kayu'], 'r produksi kayu ↔ deforestasi', F::angka($rKayu, 2), 'hubungan '.$kekuatan($rKayu)],
+            [null, 'Provinsi (titik)', $benangMerah['titik']->count(), 'di grafik G3, '.$benangMerah['periode']],
+        ];
+    @endphp
     <div class="grid content-start gap-3">
-        @foreach ([['r karhutla ↔ deforestasi', F::angka($rKarhutla, 2), 'hubungan '.$kekuatan($rKarhutla)], ['r produksi kayu ↔ deforestasi', F::angka($rKayu, 2), 'hubungan '.$kekuatan($rKayu)], ['Provinsi (titik)', $benangMerah['titik']->count(), 'di grafik G3, '.$benangMerah['periode']]] as [$label, $nilai, $arti])
-            <div class="kartu flex items-center justify-between gap-3 p-3.5">
+        @foreach ($kartuG3 as [$pasangan, $label, $nilai, $arti])
+            <div data-ds="G3" class="kartu flex items-center justify-between gap-3 p-3.5">
                 <div>
-                    <div class="text-[12px] text-ink-2"><span class="mr-1 text-ink-3">G3</span>{{ $label }}</div>
+                    <div class="flex flex-wrap items-center gap-1">
+                        @if ($pasangan)
+                            <span data-ds="{{ $pasangan[0] }}" class="lencana-ds"><x-ikon :nama="$pasangan[1]" class="size-3" />{{ $pasangan[0] }}</span>
+                            <span class="text-[11px] text-ink-3">↔</span>
+                            <span data-ds="D5" class="lencana-ds"><x-ikon nama="kapak" class="size-3" />D5</span>
+                        @else
+                            <span class="lencana-ds">G3</span>
+                        @endif
+                    </div>
+                    <div class="mt-1.5 text-[12.5px] font-semibold text-ink">{{ $label }}</div>
                     <div class="text-[11px] text-ink-3">{{ $arti }}</div>
                 </div>
                 <div class="text-2xl font-bold tabular-nums">{{ $nilai }}</div>

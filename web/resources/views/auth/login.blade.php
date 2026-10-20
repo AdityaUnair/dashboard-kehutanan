@@ -4,7 +4,7 @@
 
 @section('isi')
 <div class="grid min-h-dvh lg:grid-cols-[1.15fr_1fr]">
-    <section class="relative hidden overflow-hidden bg-[#6f9a78] text-[#f6f1e4] lg:flex lg:flex-col lg:gap-8 lg:p-12">
+    <section class="relative hidden overflow-hidden bg-gradient-to-br from-[#234b30] via-[#457553] to-[#6f9a78] text-[#f6f1e4] lg:flex lg:flex-col lg:gap-8 lg:p-12">
         <div class="absolute inset-x-0 bottom-0 h-1/2"><x-lanskap-hutan /></div>
         <div class="relative flex items-center gap-2.5">
             <span class="grid size-9 place-items-center rounded-xl bg-[#1e3a28] text-[#f6f1e4]"><x-ikon nama="pohon" class="size-[18px]" /></span>
@@ -19,12 +19,20 @@
                 Data BPS dan KLHK dalam empat format file disatukan lewat pipeline ETL ke satu database, lalu dianalisis di sini.
             </p>
         </div>
-        <div class="relative grid max-w-lg grid-cols-5 gap-2 text-center">
-            @foreach ([['D1', 'Kelas lahan', 'XLS', 'pohon'], ['D2', 'Tutupan', 'CSV', 'daun'], ['D3', 'Karhutla', 'XLSX', 'api'], ['D4', 'Kayu', 'JSON', 'kayu'], ['D5', 'Deforestasi', 'CSV', 'kapak']] as [$k, $n, $f, $i])
-                <div class="rounded-xl bg-[#1e3a28]/55 px-2 py-3 backdrop-blur-sm">
-                    <x-ikon :nama="$i" class="mx-auto size-4 text-[#cfe6c9]" />
-                    <div class="mt-1.5 text-[12px] font-medium">{{ $n }}</div>
-                    <div class="mt-0.5 text-[10.5px] text-[#d8e4cf]/80">{{ $k }} · {{ $f }}</div>
+        <div class="relative grid max-w-lg grid-cols-5 gap-2.5 text-center">
+            @foreach ([
+                ['D1', 'Kelas lahan', 'XLS', 'pohon', '#8ee2b3', 'rgba(82,199,136,0.35)'],
+                ['D2', 'Tutupan', 'CSV', 'daun', '#a4eb9f', 'rgba(94,196,126,0.35)'],
+                ['D3', 'Karhutla', 'XLSX', 'api', '#ffb09c', 'rgba(232,112,82,0.45)'],
+                ['D4', 'Kayu', 'JSON', 'kayu', '#f0be8d', 'rgba(212,146,82,0.45)'],
+                ['D5', 'Deforestasi', 'CSV', 'kapak', '#f8cf79', 'rgba(230,173,58,0.45)'],
+            ] as [$k, $n, $f, $i, $warnaTeks, $warnaGaris])
+                <div class="rounded-xl border bg-[#12261a]/65 px-2 py-3 backdrop-blur-md" style="border-color: {{ $warnaGaris }}">
+                    <span class="mx-auto grid size-7 place-items-center rounded-lg bg-white/10" style="color: {{ $warnaTeks }}">
+                        <x-ikon :nama="$i" class="size-4" />
+                    </span>
+                    <div class="mt-1.5 text-[12px] font-semibold text-white">{{ $n }}</div>
+                    <div class="mt-0.5 text-[10.5px] font-medium" style="color: {{ $warnaTeks }}">{{ $k }} · {{ $f }}</div>
                 </div>
             @endforeach
         </div>
