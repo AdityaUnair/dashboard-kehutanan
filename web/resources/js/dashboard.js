@@ -485,39 +485,28 @@ document.querySelectorAll('details.lihat-tabel[data-grafik]').forEach((det) => d
     if (det.open && grafik[det.dataset.grafik]) det.querySelector('.isi').innerHTML = tabelDari(grafik[det.dataset.grafik]);
 }));
 
-// ================================================================== satu halaman: grafik digambar saat masuk layar, menu ikut scroll
+// ================================================================== tab utama
+const TAB = ['ringkasan', 'per-data', 'sebaran', 'gabungan', 'integrasi'];
 const BAGIAN_KE_DATA = { kawasan: 'D1', tutupan: 'D2', deforestasi: 'D5', karhutla: 'D3', kayu: 'D4' };
 
-const pengamatGrafik = new IntersectionObserver((entri) => entri.forEach((e) => {
-    if (e.isIntersecting) pastikanGrafik(e.target.parentElement);
-}), { rootMargin: '0px 0px -10% 0px' });
-document.querySelectorAll('canvas[id]').forEach((cv) => DEF[cv.id] && pengamatGrafik.observe(cv));
-
-const tautanMenu = [...document.querySelectorAll('[data-tab]')];
-const pengamatMenu = new IntersectionObserver((entri) => entri.forEach((e) => {
-    if (e.isIntersecting) tautanMenu.forEach((a) => a.setAttribute('aria-current', String(a.dataset.tab === e.target.id)));
-}), { rootMargin: '-40% 0px -55% 0px' });
-document.querySelectorAll('[data-panel]').forEach((s) => pengamatMenu.observe(s));
-
-// Animasi muncul (memudar + naik sedikit) untuk kartu di bawah layar; dilewati bila pengguna memilih reduced motion
-if (matchMedia('(prefers-reduced-motion: no-preference)').matches) {
-    const pengamatMuncul = new IntersectionObserver((entri, o) => entri.forEach((e) => {
-        if (e.isIntersecting) { e.target.classList.add('terlihat'); o.unobserve(e.target); }
-    }), { rootMargin: '0px 0px -8% 0px' });
-    document.querySelectorAll('main .kartu, main .insight').forEach((el) => {
-        if (el.getBoundingClientRect().top < innerHeight) return;
-        el.style.transitionDelay = `${Math.min([...el.parentElement.children].indexOf(el), 4) * 70}ms`;
-        el.classList.add('muncul');
-        pengamatMuncul.observe(el);
-    });
+function bukaTab(id, { simpan = true } = {}) {
+    if (!TAB.includes(id)) id = 'ringkasan';
+    document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== id; });
+    document.querySelectorAll('[data-tab]').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === id)));
+    if (simpan) history.replaceState(null, '', `#${id}`);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    if (id === 'sebaran') gambarPeta();
+    pastikanGrafik(document.getElementById(`panel-${id}`));
 }
+document.querySelectorAll('[data-tab]').forEach((t) => t.addEventListener('click', () => bukaTab(t.dataset.tab)));
+document.querySelectorAll('[data-ke-tab]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); bukaTab(a.dataset.keTab); }));
 
 // ================================================================== per data: dropdown
 const pilihData = document.getElementById('pilihData');
 function tampilkanData(kode) {
     pilihData.value = kode;
     document.querySelectorAll('[data-dataset]').forEach((b) => { b.hidden = b.dataset.dataset !== kode; });
-    pastikanGrafik(document.getElementById('per-data'));
+    pastikanGrafik(document.getElementById('panel-per-data'));
 }
 pilihData.addEventListener('change', () => tampilkanData(pilihData.value));
 [['pilihTahunKarhutla', 'chartKarhutlaProvinsi'], ['pilihTahunKayu', 'chartKayuProvinsi']].forEach(([sel, id]) =>
@@ -576,64 +565,7 @@ function skalaWarna(ds, nilaiTahun) {
 }
 
 let geo = null;
-fetch('/peta/provinsi.json').then((r) => r.json()).then((g) => { geo = g; gambarPeta(); gambarIndonesiaDiBumi(); });
-
-// ================================================================== adegan scroll: pohon tumbuh -> kamera naik -> bumi dari satelit
-const adegan = document.getElementById('adeganSatelit');
-const bagianAdegan = (n) => adegan.querySelector(`[data-adegan="${n}"]`);
-const pohonAdegan = [...adegan.querySelectorAll('[data-pohon]')];
-const keteranganAdegan = [...adegan.querySelectorAll('[data-keterangan]')];
-const antara = (p, a, b) => Math.min(1, Math.max(0, (p - a) / (b - a)));
-const halus = (t) => 1 - (1 - t) ** 3; // ease-out
-
-function gambarIndonesiaDiBumi() {
-    // Indonesia di dalam bola bumi, diwarnai persentase daratan berhutan (D2, tahun terakhir)
-    const ds = D.sebaran.dataset.D2;
-    const nilai = ds.nilai[Object.keys(ds.nilai).pop()];
-    const batas = [0.2, 0.4, 0.6, 0.8].map((q) => kuantil(Object.values(nilai), q));
-    const warna = (v) => { const i = batas.findIndex((b) => v <= b); return TEMA.terang.ramp.hijau[i === -1 ? 4 : i]; };
-    const s = 0.44;
-    const [, , lebar, tinggi] = geo.viewBox.split(' ').map(Number);
-    bagianAdegan('indonesia').innerHTML = `<g transform="translate(${600 - (lebar * s) / 2} ${350 - (tinggi * s) / 2}) scale(${s})">${
-        geo.provinsi.map((g) => `<path d="${g.d}" fill="${nilai[g.kode] ? warna(nilai[g.kode]) : W.ramp.hijau[0]}" stroke="#16324a" stroke-width="1"/>`).join('')}</g>`;
-}
-
-function aturAdegan(p) {
-    pohonAdegan.forEach((el, i) => {
-        const mulai = (i / pohonAdegan.length) * 0.22;
-        el.style.transform = `scaleY(${halus(antara(p, mulai, mulai + 0.1))})`;
-    });
-    const naik = halus(antara(p, 0.36, 0.72));
-    bagianAdegan('lanskap').style.transform = `translateY(${-naik * 260}px) scale(${1 - naik * 0.88})`;
-    bagianAdegan('lanskap').style.opacity = 1 - antara(p, 0.42, 0.56);
-    bagianAdegan('angkasa').style.opacity = antara(p, 0.3, 0.5);
-    const bumi = halus(antara(p, 0.55, 0.85));
-    bagianAdegan('bumi').style.opacity = bumi;
-    bagianAdegan('bumi').style.transform = `translateY(110px) scale(${(1.8 - bumi * 0.8) * 0.8})`;
-    const pindai = antara(p, 0.85, 1);
-    bagianAdegan('pemindai').style.opacity = pindai > 0 && pindai < 1 ? 0.8 : 0;
-    bagianAdegan('pemindai').style.transform = `translateX(${pindai * 534}px)`;
-    // tiap teks punya jendela scroll sendiri: masuk (pudar + naik), bertahan, lalu keluar
-    [[0, 0.3], [0.44, 0.68], [0.76, 1.01]].forEach(([a, b], i) => {
-        const o = (i === 0 ? 1 : antara(p, a, a + 0.07)) * (1 - antara(p, b - 0.07, b));
-        keteranganAdegan[i].style.opacity = o;
-        keteranganAdegan[i].style.transform = `translateY(${(1 - o) * (p < a + 0.07 ? 28 : -28)}px)`;
-    });
-}
-
-if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    adegan.style.height = 'auto';
-    aturAdegan(1);
-} else {
-    let antre = false;
-    const ikutiScroll = () => {
-        antre = false;
-        const kotak = adegan.getBoundingClientRect();
-        aturAdegan(antara(-kotak.top, 0, kotak.height - innerHeight * 0.8));
-    };
-    addEventListener('scroll', () => { if (!antre) { antre = true; requestAnimationFrame(ikutiScroll); } }, { passive: true });
-    ikutiScroll();
-}
+fetch('/peta/provinsi.json').then((r) => r.json()).then((g) => { geo = g; gambarPeta(); });
 
 const tooltipPeta = Object.assign(document.createElement('div'), {
     className: 'pointer-events-none fixed z-50 hidden rounded-xl border border-white/10 px-3 py-2 text-xs text-white shadow-xl',
@@ -735,18 +667,14 @@ document.getElementById('gantiTema').addEventListener('click', () => {
     try { localStorage.setItem('tema', html.dataset.tema); } catch (e) { /* penyimpanan tidak tersedia */ }
     terapkanGayaDasar();
     bangunUlangSemua();
-    gambarPeta();
+    if (!document.getElementById('panel-sebaran').hidden) gambarPeta();
 });
 
 // ================================================================== mulai
-// Tautan ke bagian satu data (mis. #karhutla) memilih data itu di dropdown dulu, lalu menggulir ke sana
 function ikutiHash() {
-    const id = location.hash.slice(1);
-    if (!BAGIAN_KE_DATA[id]) return;
-    tampilkanData(BAGIAN_KE_DATA[id]);
-    document.getElementById(id).scrollIntoView();
+    const hash = location.hash.slice(1);
+    if (BAGIAN_KE_DATA[hash]) { tampilkanData(BAGIAN_KE_DATA[hash]); bukaTab('per-data'); } else { bukaTab(hash || 'ringkasan', { simpan: false }); }
 }
 terapkanGayaDasar();
-gambarPeta();
 ikutiHash();
 window.addEventListener('hashchange', ikutiHash);

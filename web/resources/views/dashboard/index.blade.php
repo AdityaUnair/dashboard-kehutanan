@@ -20,14 +20,14 @@
 
 <header class="sticky top-0 z-30 border-b border-garis bg-page/85 backdrop-blur-xl">
     <div class="mx-auto flex max-w-[1360px] items-center gap-4 px-4 py-3 md:px-6">
-        <a href="#ringkasan" class="flex shrink-0 items-center gap-2.5" >
+        <a href="#ringkasan" class="flex shrink-0 items-center gap-2.5" data-ke-tab="ringkasan">
             <span class="grid size-9 place-items-center rounded-xl bg-brand text-[#f6f1e4] shadow-sm"><x-ikon nama="pohon" class="size-[18px]" /></span>
             <span class="hidden text-sm leading-tight font-semibold sm:block">Dashboard Kehutanan<span class="block text-[11px] font-normal text-ink-3">Data-level EAI · Kelompok 3</span></span>
         </a>
 
-        <nav class="mx-auto hidden items-center gap-1 rounded-xl border border-garis bg-surface p-1 lg:flex" aria-label="Bagian dashboard">
+        <nav class="mx-auto hidden items-center gap-1 rounded-xl border border-garis bg-surface p-1 lg:flex" role="tablist" aria-label="Halaman dashboard">
             @foreach ($tabs as $id => [$label, $ikon])
-                <a href="#{{ $id }}" class="tab inline-flex items-center gap-1.5" data-tab="{{ $id }}" aria-current="false"><x-ikon :nama="$ikon" class="size-4" />{{ $label }}</a>
+                <button class="tab inline-flex items-center gap-1.5" role="tab" data-tab="{{ $id }}" aria-controls="panel-{{ $id }}" aria-selected="false"><x-ikon :nama="$ikon" class="size-4" />{{ $label }}</button>
             @endforeach
         </nav>
 
@@ -47,19 +47,19 @@
     </div>
 
     {{-- Tab versi layar kecil: bisa digeser --}}
-    <nav class="flex gap-1 overflow-x-auto px-4 pb-2.5 lg:hidden" aria-label="Bagian dashboard">
+    <nav class="flex gap-1 overflow-x-auto px-4 pb-2.5 lg:hidden" role="tablist" aria-label="Halaman dashboard">
         @foreach ($tabs as $id => [$label, $ikon])
-            <a href="#{{ $id }}" class="tab inline-flex items-center gap-1.5" data-tab="{{ $id }}" aria-current="false"><x-ikon :nama="$ikon" class="size-4" />{{ $label }}</a>
+            <button class="tab inline-flex items-center gap-1.5" role="tab" data-tab="{{ $id }}" aria-controls="panel-{{ $id }}" aria-selected="false"><x-ikon :nama="$ikon" class="size-4" />{{ $label }}</button>
         @endforeach
     </nav>
 </header>
 
 <main class="mx-auto max-w-[1360px] px-4 pt-7 pb-20 md:px-6">
-    <section id="ringkasan" data-panel="ringkasan" class="scroll-mt-28 [&:not(:first-child)]:mt-24">@include('dashboard.partials.ringkasan')</section>
-    <section id="per-data" data-panel="per-data" class="scroll-mt-28 [&:not(:first-child)]:mt-24">@include('dashboard.partials.per-data')</section>
-    <section id="sebaran" data-panel="sebaran" class="scroll-mt-28 [&:not(:first-child)]:mt-24">@include('dashboard.partials.sebaran')</section>
-    <section id="gabungan" data-panel="gabungan" class="scroll-mt-28 [&:not(:first-child)]:mt-24">@include('dashboard.partials.gabungan')</section>
-    <section id="integrasi" data-panel="integrasi" class="scroll-mt-28 [&:not(:first-child)]:mt-24">@include('dashboard.partials.integrasi')</section>
+    <section id="panel-ringkasan" role="tabpanel" data-panel="ringkasan">@include('dashboard.partials.ringkasan')</section>
+    <section id="panel-per-data" role="tabpanel" data-panel="per-data" hidden>@include('dashboard.partials.per-data')</section>
+    <section id="panel-sebaran" role="tabpanel" data-panel="sebaran" hidden>@include('dashboard.partials.sebaran')</section>
+    <section id="panel-gabungan" role="tabpanel" data-panel="gabungan" hidden>@include('dashboard.partials.gabungan')</section>
+    <section id="panel-integrasi" role="tabpanel" data-panel="integrasi" hidden>@include('dashboard.partials.integrasi')</section>
 
     <footer class="mt-16 flex flex-wrap items-center justify-between gap-2 border-t border-garis pt-5 text-xs text-ink-3">
         <span>Dibaca dari database <code class="text-ink-2">kehutanan_dashboard</code> (replika) hasil pipeline ETL</span>

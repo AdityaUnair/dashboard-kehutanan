@@ -15,13 +15,13 @@
             'status hukum, nyaris tetap', null, 'D1', 'bg-brand-lembut text-brand-teks'],
     ];
     $temuan = [
-        ['karhutla', 'api', 'Karhutla meledak di tahun El Niño',
+        ['per-data', 'api', 'Karhutla meledak di tahun El Niño',
             'Luas terbakar '.$karhutla['puncak'].' mencapai '.F::ringkas($karhutla['nasional'][$karhutla['puncak']]).' ha dan '.$karhutla['puncak_kedua'].' '.F::ringkas($karhutla['nasional'][$karhutla['puncak_kedua']]).' ha, beberapa kali lipat tahun lain.'],
-        ['deforestasi', 'kapak', 'Laju deforestasi turun tajam sejak 2019',
+        ['per-data', 'kapak', 'Laju deforestasi turun tajam sejak 2019',
             'Dari '.F::ringkas($kpi['deret']['deforestasi']['2018-2019'] ?? null).' ha/th (2018–19) menjadi '.F::ringkas($kpi['deforestasi']['nilai']).' ha/th ('.$kpi['deforestasi']['periode'].').'],
-        ['benang-merah', 'kayu', 'Produksi kayu paling dekat dengan deforestasi',
+        ['gabungan', 'kayu', 'Produksi kayu paling dekat dengan deforestasi',
             'Antarprovinsi, kayu ↔ deforestasi r = '.F::angka($benangMerah['r_kayu_defor'], 2).', lebih kuat dari karhutla ↔ deforestasi (r = '.F::angka($benangMerah['r_karhutla_defor'], 2).').'],
-        ['validasi', 'lapisan', 'Dua sumber resmi tidak sepakat',
+        ['gabungan', 'lapisan', 'Dua sumber resmi tidak sepakat',
             'Tutupan hutan (D2) naik '.F::ringkas($validasi['perubahan_tutupan']).' ha, padahal deforestasi netto (D5) menunjukkan hutan berkurang.'],
     ];
     $panelIndeks = [
@@ -100,7 +100,7 @@
         <ol class="grid gap-2">
             @foreach ($temuan as [$tab, $ikon, $judul, $isi])
                 <li>
-                    <a href="#{{ $tab }}" class="group flex gap-3 rounded-xl border border-garis bg-surface-2 p-3 transition hover:border-brand/40 hover:bg-sorot">
+                    <a href="#{{ $tab }}" data-ke-tab="{{ $tab }}" class="group flex gap-3 rounded-xl border border-garis bg-surface-2 p-3 transition hover:border-brand/40 hover:bg-sorot">
                         <span class="grid size-8 shrink-0 place-items-center rounded-lg bg-surface text-brand-teks shadow-[inset_0_0_0_1px_var(--garis)]"><x-ikon :nama="$ikon" class="size-4" /></span>
                         <span class="min-w-0">
                             <span class="block text-[13.5px] font-medium text-ink">{{ $judul }}</span>
