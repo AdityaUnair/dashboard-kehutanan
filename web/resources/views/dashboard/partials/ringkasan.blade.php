@@ -31,29 +31,29 @@
 @endphp
 
 {{-- Banner dengan ilustrasi hutan --}}
-<div class="relative overflow-hidden rounded-3xl bg-[#6f9a78] px-6 pt-8 pb-28 text-[#f6f1e4] md:px-10 md:pt-10 md:pb-36">
+<div class="relative overflow-hidden rounded-3xl bg-[#6f9a78] px-6 pt-6 pb-20 text-[#f6f1e4] md:px-8 md:pt-7 md:pb-24">
     <div class="absolute inset-x-0 bottom-0 h-[55%]"><x-lanskap-hutan /></div>
     <div class="relative max-w-2xl">
         <span class="inline-flex items-center gap-1.5 rounded-full bg-black/15 px-3 py-1 text-[11.5px] font-medium backdrop-blur">
             <x-ikon nama="pohon" class="size-3.5" /> Integrasi 5 sumber data · 2018–2026 (2026: Januari–Juli) · 34 provinsi
         </span>
-        <h1 class="mt-4 text-balance text-[26px] leading-[1.15] font-semibold text-white drop-shadow-sm md:text-[36px]">
+        <h1 class="mt-3 text-balance text-[24px] leading-[1.15] font-semibold text-white drop-shadow-sm md:text-[30px]">
             Hutan Indonesia: berapa yang tersisa, dan apa yang menggerusnya?
         </h1>
-        <p class="mt-3 max-w-xl text-[14.5px] leading-relaxed text-[#eef3e6]/90">
+        <p class="mt-2 max-w-xl text-[14px] leading-relaxed text-[#eef3e6]/90">
             Data BPS dan KLHK dalam tiga format (XLSX, CSV, JSON) diekstrak, diseragamkan, lalu dimuat ke satu database.
         </p>
     </div>
 </div>
 
-<div class="relative z-10 -mt-14 grid grid-cols-1 gap-3 px-2 sm:grid-cols-2 md:px-4 lg:grid-cols-5">
+<div class="relative z-10 -mt-12 grid grid-cols-1 gap-3 px-2 sm:grid-cols-2 md:px-4 lg:grid-cols-5">
     @foreach ($tiles as [$kunci, $ikon, $label, $nilai, $satuan, $catatan, $delta, $kode, $warnaIkon])
         <div class="kartu flex flex-col p-4 shadow-[0_8px_24px_-12px_rgba(40,30,10,0.25)]">
             <div class="flex items-start justify-between gap-2">
                 <span class="grid size-9 place-items-center rounded-xl {{ $warnaIkon }}"><x-ikon :nama="$ikon" class="size-[18px]" /></span>
                 <span class="text-[10.5px] font-semibold text-ink-3">{{ $kode }}</span>
             </div>
-            <div class="mt-3 text-[12.5px] text-ink-2">{{ $label }}</div>
+            <div class="mt-2 text-[12.5px] text-ink-2">{{ $label }}</div>
             <div class="mt-1 text-[26px] leading-none font-semibold">
                 {{ $nilai }}<span class="ml-1 text-sm font-normal text-ink-3">{{ $satuan }}</span>
             </div>
@@ -67,12 +67,12 @@
                 @endif
                 {{ $catatan }}
             </div>
-            <div class="mt-3 h-11"><canvas id="spark-{{ $kunci }}" aria-hidden="true"></canvas></div>
+            <div class="mt-2 h-9"><canvas id="spark-{{ $kunci }}" aria-hidden="true"></canvas></div>
         </div>
     @endforeach
 </div>
 
-<div class="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+<div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
     <div class="kartu">
         <div class="flex items-center gap-2">
             <span class="grid size-8 place-items-center rounded-lg bg-brand-lembut text-brand-teks"><x-ikon nama="grafik" class="size-4" /></span>

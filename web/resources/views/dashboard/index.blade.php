@@ -54,12 +54,12 @@
     </nav>
 </header>
 
-<main class="mx-auto max-w-[1360px] px-4 pt-7 pb-20 md:px-6">
-    <section id="ringkasan" data-panel="ringkasan" class="scroll-mt-28 [&:not(:first-child)]:mt-24">@include('dashboard.partials.ringkasan')</section>
-    <section id="per-data" data-panel="per-data" class="scroll-mt-28 [&:not(:first-child)]:mt-24">@include('dashboard.partials.per-data')</section>
-    <section id="sebaran" data-panel="sebaran" class="scroll-mt-28 [&:not(:first-child)]:mt-24">@include('dashboard.partials.sebaran')</section>
-    <section id="gabungan" data-panel="gabungan" class="scroll-mt-28 [&:not(:first-child)]:mt-24">@include('dashboard.partials.gabungan')</section>
-    <section id="integrasi" data-panel="integrasi" class="scroll-mt-28 [&:not(:first-child)]:mt-24">@include('dashboard.partials.integrasi')</section>
+<main class="mx-auto max-w-[1360px] px-4 pt-5 pb-16 md:px-6">
+    <section id="ringkasan" data-panel="ringkasan" class="scroll-mt-28 [&:not(:first-child)]:mt-14">@include('dashboard.partials.ringkasan')</section>
+    <section id="per-data" data-panel="per-data" class="scroll-mt-28 [&:not(:first-child)]:mt-14">@include('dashboard.partials.per-data')</section>
+    <section id="sebaran" data-panel="sebaran" class="scroll-mt-28 [&:not(:first-child)]:mt-14">@include('dashboard.partials.sebaran')</section>
+    <section id="gabungan" data-panel="gabungan" class="scroll-mt-28 [&:not(:first-child)]:mt-14">@include('dashboard.partials.gabungan')</section>
+    <section id="integrasi" data-panel="integrasi" class="scroll-mt-28 [&:not(:first-child)]:mt-14">@include('dashboard.partials.integrasi')</section>
 
     <footer class="mt-16 flex flex-wrap items-center justify-between gap-2 border-t border-garis pt-5 text-xs text-ink-3">
         <span>Dibaca dari database <code class="text-ink-2">kehutanan_dashboard</code> (replika) hasil pipeline ETL</span>

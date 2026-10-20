@@ -126,16 +126,29 @@ Chart.register(
             ctx.fillStyle = W.tinta2;
             ctx.textBaseline = 'middle';
             const akhir = chart.data.datasets.length - 1;
-            chart.getDatasetMeta(akhir).data.forEach((el, i) => {
-                const nilai = o.total ? chart.data.datasets.reduce((s, ds) => s + (ds.data[i] ?? 0), 0) : chart.data.datasets[akhir].data[i];
+            const nilaiKe = (i) => (o.total ? chart.data.datasets.reduce((s, ds) => s + (ds.data[i] ?? 0), 0) : chart.data.datasets[akhir].data[i]);
+            const elemen = chart.getDatasetMeta(akhir).data;
+            // batang tegak di grafik sempit: nilai terbesar diberi label lebih dulu, label yang akan bertabrakan dilewati (angkanya tetap ada di tooltip & tabel)
+            const urutan = elemen.map((_e, i) => i);
+            if (chart.options.indexAxis !== 'y') urutan.sort((a, b) => (nilaiKe(b) ?? -Infinity) - (nilaiKe(a) ?? -Infinity));
+            const terpakai = [];
+            urutan.forEach((i) => {
+                const el = elemen[i];
+                const nilai = nilaiKe(i);
                 if (nilai === null || nilai === undefined) return;
                 const teks = (o.format ?? ringkas)(nilai);
                 if (chart.options.indexAxis === 'y') {
                     ctx.textAlign = nilai < 0 ? 'right' : 'left';
                     ctx.fillText(teks, el.x + (nilai < 0 ? -6 : 6), el.y);
                 } else {
+                    const lebar = ctx.measureText(teks).width;
+                    const kiri = el.x - lebar / 2 - 2;
+                    const kanan = el.x + lebar / 2 + 2;
+                    const y = el.y - 10;
+                    if (terpakai.some((k) => kiri < k.kanan && kanan > k.kiri && Math.abs(y - k.y) < 13)) return;
+                    terpakai.push({ kiri, kanan, y });
                     ctx.textAlign = 'center';
-                    ctx.fillText(teks, el.x, el.y - 10);
+                    ctx.fillText(teks, el.x, y);
                 }
             });
             ctx.restore();
@@ -364,7 +377,7 @@ const trenNasional = (data, warna, satuan, sorot) => () => {
         data: { labels: tahun, datasets: [{ label: satuan, data: nilai, backgroundColor: latar, ...gayaBatang }] },
         options: {
             layout: { padding: { top: 18 } },
-            scales: { y: sumbuRingkas(), x: tanpaKisi },
+            scales: { y: sumbuRingkas(), x: { ...tanpaKisi, ticks: { maxRotation: 0, autoSkip: false, font: { size: 10.5 } } } },
             plugins: {
                 legend: { display: false },
                 tooltip: { callbacks: { title: (i) => (data.parsial && i[0].dataIndex === tahun.length - 1 ? data.parsial.label : i[0].label), label: labelTooltip(satuan) } },

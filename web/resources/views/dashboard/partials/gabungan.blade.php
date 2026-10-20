@@ -18,7 +18,7 @@
           sub="Luas kawasan hutan (status hukum) dibandingkan dengan luas tutupan hutan (citra satelit) di provinsi dan tahun yang sama.">
     <div class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <x-grafik id="chartKawasanVsTutupan" judul="Kawasan hutan vs tutupan hutan, 15 provinsi dengan kawasan terluas"
-                  ket="Tutupan hutan bisa berada di dalam maupun di luar kawasan" tinggi="h-[480px]" />
+                  ket="Tutupan hutan bisa berada di dalam maupun di luar kawasan" tinggi="h-[400px]" />
         <div class="kartu">
             <div class="kartu-judul">Rasio tutupan hutan ÷ luas kawasan terendah</div>
             <div class="kartu-ket">Provinsi dengan kawasan lebih dari 500 rb ha</div>
@@ -51,7 +51,8 @@
 
 <x-bagian id="benang-merah" nomor="G3" judul="Benang merah per provinsi" sumber="D3 + D4 + D5 · {{ $benangMerah['periode'] }}"
           sub="Setiap titik = satu provinsi. Sumbu X = total luas karhutla, sumbu Y = total deforestasi netto, ukuran titik = total produksi kayu. Periode diseragamkan ke {{ $benangMerah['periode'] }} (irisan ketiga data).">
-    <x-grafik id="chartBenangMerah" judul="Karhutla, deforestasi, dan produksi kayu per provinsi" ket="Warna = pulau utama; Kalimantan Utara digabung ke Kalimantan Timur" tinggi="h-[460px]">
+    <div class="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)]">
+    <x-grafik id="chartBenangMerah" judul="Karhutla, deforestasi, dan produksi kayu per provinsi" ket="Warna = pulau utama; Kalimantan Utara digabung ke Kalimantan Timur" tinggi="h-[380px]">
         <div class="mb-4 grid gap-3 sm:grid-cols-3">
             @foreach ([['Korelasi karhutla ↔ deforestasi', $rKarhutla], ['Korelasi produksi kayu ↔ deforestasi', $rKayu]] as [$label, $r])
                 <div class="rounded-xl border border-garis bg-surface-2 px-4 py-3">
@@ -65,26 +66,38 @@
             </div>
         </div>
     </x-grafik>
-    <x-insight>
-        @if ($rKayu > $rKarhutla)
-            <p><b>Terlihat</b>Di tingkat provinsi, produksi kayu justru lebih erat hubungannya dengan deforestasi (r = {{ F::angka($rKayu, 2) }},
+    @if ($rKayu > $rKarhutla)
+        <x-insight>
+            <x-slot:terlihat>
+                Di tingkat provinsi, produksi kayu justru lebih erat hubungannya dengan deforestasi (r = {{ F::angka($rKayu, 2) }},
                 {{ $kekuatan($rKayu) }}) dibanding karhutla (r = {{ F::angka($rKarhutla, 2) }}, {{ $kekuatan($rKarhutla) }}). Riau dan Kalimantan
                 Timur, produsen kayu besar, juga paling banyak kehilangan hutan. Sebaliknya Nusa Tenggara Timur punya karhutla luas tetapi
-                deforestasinya kecil.</p>
-            <p><b>Kenapa</b>Provinsi produsen kayu adalah provinsi dengan konsesi hutan tanaman dan perkebunan terluas; pembukaan hutan alam untuk
+                deforestasinya kecil.
+            </x-slot:terlihat>
+            <x-slot:kenapa>
+                Provinsi produsen kayu adalah provinsi dengan konsesi hutan tanaman dan perkebunan terluas; pembukaan hutan alam untuk
                 ditanami ulang tercatat sebagai deforestasi. Kebakaran di NTT banyak terjadi di savana dan padang rumput yang memang bukan hutan.
-                Ingat: korelasi bukan sebab-akibat, dan hanya ada {{ $benangMerah['titik']->count() }} titik.</p>
-        @else
-            <p><b>Terlihat</b>Provinsi dengan karhutla luas cenderung juga mengalami deforestasi besar (r = {{ F::angka($rKarhutla, 2) }}), lebih
-                erat dibanding produksi kayu (r = {{ F::angka($rKayu, 2) }}).</p>
-            <p><b>Kenapa</b>Kebakaran di lahan gambut langsung menghilangkan tutupan hutan, sedangkan kayu banyak berasal dari hutan tanaman yang
-                dipanen dan ditanam ulang. Korelasi bukan sebab-akibat; jumlah provinsi juga sedikit.</p>
-        @endif
-    </x-insight>
+                Ingat: korelasi bukan sebab-akibat, dan hanya ada {{ $benangMerah['titik']->count() }} titik.
+            </x-slot:kenapa>
+        </x-insight>
+    @else
+        <x-insight>
+            <x-slot:terlihat>
+                Provinsi dengan karhutla luas cenderung juga mengalami deforestasi besar (r = {{ F::angka($rKarhutla, 2) }}), lebih
+                erat dibanding produksi kayu (r = {{ F::angka($rKayu, 2) }}).
+            </x-slot:terlihat>
+            <x-slot:kenapa>
+                Kebakaran di lahan gambut langsung menghilangkan tutupan hutan, sedangkan kayu banyak berasal dari hutan tanaman yang
+                dipanen dan ditanam ulang. Korelasi bukan sebab-akibat; jumlah provinsi juga sedikit.
+            </x-slot:kenapa>
+        </x-insight>
+    @endif
+    </div>
 </x-bagian>
 
 <x-bagian id="validasi" nomor="G4" judul="Validasi silang: apakah dua sumber sepakat?" sumber="D2 vs D5 · 2018–2022"
           sub="Dua data ini seharusnya cocok. D2 mencatat luas hutan tiap tahun; D5 mencatat berapa hutan yang hilang tiap tahun. Kalau hutan hilang, luas hutan di D2 seharusnya ikut berkurang kira-kira sebanyak itu.">
+    <div class="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)]">
     <div class="kartu">
         <div class="grid gap-3 sm:grid-cols-3">
             @foreach ([
@@ -99,12 +112,15 @@
                 </div>
             @endforeach
         </div>
+    </div>
         <x-insight :peringatan="true">
             <p><b>Temuan</b>Dua data resmi ini <strong>tidak cocok</strong>. Menurut D5, hutan berkurang sekitar {{ F::ringkas(abs($validasi['perkiraan_dari_deforestasi'])) }} ha;
                 menurut D2, luas hutan justru bertambah {{ F::ringkas($validasi['perubahan_tutupan']) }} ha.</p>
-            <p><b>Kenapa</b>Kemungkinan karena cara menghitungnya berbeda. Tabel D2 bersumber dari buku <em>Rekalkulasi Penutupan Lahan 2023</em> (semua
+            <x-slot:kenapa>
+                Kemungkinan karena cara menghitungnya berbeda. Tabel D2 bersumber dari buku <em>Rekalkulasi Penutupan Lahan 2023</em> (semua
                 tahun dihitung ulang), sedangkan D5 dari buku-buku deforestasi per periode yang terbit lebih dulu. Perbedaan ini baru kelihatan
-                setelah kedua data digabung; kalau dibaca terpisah, masing-masing tampak wajar.</p>
+                setelah kedua data digabung; kalau dibaca terpisah, masing-masing tampak wajar.
+            </x-slot:kenapa>
         </x-insight>
     </div>
 </x-bagian>
