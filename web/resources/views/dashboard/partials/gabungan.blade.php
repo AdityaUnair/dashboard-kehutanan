@@ -14,7 +14,7 @@
 <x-judul-panel judul="Analisis gabungan"
                sub="Hal-hal yang baru terlihat bila beberapa data disambungkan. Tren gabungan (indeks 2018 = 100) ada di Ringkasan." />
 
-<div class="grid gap-3 xl:grid-cols-3">
+<div class="grid items-start gap-3 xl:grid-cols-3">
     {{-- G2: seharusnya vs kenyataan --}}
     <x-grafik id="chartKawasanVsTutupan" jangkar="kawasan-vs-tutupan" kode="G2" ikon="lapisan" class="xl:col-span-2"
               judul="Seharusnya vs kenyataan: kawasan hutan vs tutupan hutan" tinggi="h-[340px]"

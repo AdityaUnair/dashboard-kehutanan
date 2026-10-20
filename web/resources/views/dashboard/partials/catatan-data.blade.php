@@ -1,5 +1,5 @@
-{{-- Catatan kualitas data: mengisi 2 kolom terakhir baris keempat grid per data --}}
-<div class="kartu md:col-span-2 xl:col-span-2 border-peringatan/30 bg-peringatan-lembut">
+{{-- Catatan kualitas data: satu baris penuh di akhir grid per data --}}
+<div class="kartu md:col-span-2 border-peringatan/30 bg-peringatan-lembut">
     <div class="flex items-center gap-2.5">
         <span class="grid size-7 shrink-0 place-items-center rounded-lg bg-surface text-peringatan"><x-ikon nama="lapisan" class="size-3.5" /></span>
         <div class="kartu-judul">Catatan data</div>
