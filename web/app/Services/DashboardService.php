@@ -384,7 +384,7 @@ class DashboardService
             'D2' => [
                 'label' => 'Tutupan hutan (% daratan)', 'satuan' => '%', 'skala' => 'sekuensial', 'kaltaraDigabung' => true,
                 'nilai' => $perTahun(TutupanLahan::all(), 'tahun', 'persen_hutan'),
-                'catatan' => 'Persen daratan provinsi yang masih berhutan.',
+                'catatan' => 'Persen hutan sesuai kolom % di tabel BPS (Kalimantan Timur 2021 ke atas dihitung ulang karena digabung dengan Kalimantan Utara).',
             ],
             'D5' => [
                 'label' => 'Deforestasi netto', 'satuan' => 'ha/th', 'skala' => 'divergen', 'kaltaraDigabung' => true,

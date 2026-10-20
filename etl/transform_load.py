@@ -126,7 +126,7 @@ def transform_d1(conn):
 # ---------------------------------------------------------------- D2
 def transform_d2(conn):
     rows = ambil(conn, f"SELECT * FROM {DB_STAGING}.stg_d2_tutupan_lahan")
-    agregat, dibuang, total = defaultdict(dict), defaultdict(int), {}
+    agregat, dibuang, total, persen_sumber = defaultdict(dict), defaultdict(int), {}, {}
     for r in rows:
         tahun, kode = r["tahun_data"], kode_provinsi(r["provinsi_raw"])
         hutan, non, jml = (angka_spasi(r[k]) for k in ("hutan_raw", "non_hutan_raw", "jumlah_raw"))
@@ -145,13 +145,16 @@ def transform_d2(conn):
             kode = "64"
         # T4: ribu ha -> ha
         _tambah(agregat, (kode, tahun), {"hutan_ha": hutan * 1000, "non_hutan_ha": non * 1000, "total_ha": jml * 1000})
+        # persen hutan dipakai apa adanya dari kolom % tabel BPS; bila dua baris digabung (Kaltim + Kaltara) dihitung ulang
+        persen_sumber[(kode, tahun)] = None if (kode, tahun) in persen_sumber else angka_spasi(r["hutan_pct_raw"])
 
     hasil, jumlah = [], defaultdict(float)
     for (kode, tahun), v in sorted(agregat.items()):
         hasil.append({
             "kode_bps": kode, "tahun": tahun, "hutan_ha": round(v["hutan_ha"], 2),
             "non_hutan_ha": round(v["non_hutan_ha"], 2), "total_ha": round(v["total_ha"], 2),
-            "persen_hutan": round(v["hutan_ha"] / v["total_ha"] * 100, 2) if v["total_ha"] else None,
+            "persen_hutan": persen_sumber.get((kode, tahun))
+                            or (round(v["hutan_ha"] / (v["hutan_ha"] + v["non_hutan_ha"]) * 100, 2) if v["hutan_ha"] else None),
             "catatan": CATATAN_KALTIM if kode == "64" else None, "updated_at": sekarang(),
         })
         jumlah[tahun] += v["total_ha"]
