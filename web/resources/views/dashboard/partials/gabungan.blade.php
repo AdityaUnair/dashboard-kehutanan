@@ -23,13 +23,13 @@
             <div class="kartu-judul">Rasio tutupan hutan ÷ luas kawasan terendah</div>
             <div class="kartu-ket">Provinsi dengan kawasan lebih dari 500 rb ha</div>
             <table class="tabel-data">
-                <thead><tr><th>Provinsi</th><th class="angka">Kawasan</th><th class="angka">Tutupan</th><th class="angka">Rasio</th></tr></thead>
+                <thead><tr><th>Provinsi</th><th class="angka">Kawasan (ha)</th><th class="angka">Tutupan (ha)</th><th class="angka">Rasio</th></tr></thead>
                 <tbody>
                 @foreach ($kawasanVsTutupan['rasio_rendah'] as $r)
                     <tr>
                         <td class="text-ink">{{ $r['nama'] }}</td>
-                        <td class="angka">{{ F::ringkas($r['kawasan']) }}</td>
-                        <td class="angka">{{ F::ringkas($r['hutan']) }}</td>
+                        <td class="angka">{{ F::angka($r['kawasan']) }}</td>
+                        <td class="angka">{{ F::angka($r['hutan']) }}</td>
                         <td class="angka font-semibold text-ink">{{ F::persen($r['rasio'], 0) }}</td>
                     </tr>
                 @endforeach
