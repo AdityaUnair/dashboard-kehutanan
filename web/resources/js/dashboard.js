@@ -98,7 +98,7 @@ const skalaPas = (nilai, persen = 0.06) => {
     return { min: tengah - rentang / 2, max: tengah + rentang / 2 };
 };
 // Celah data (null) disambung garis putus-putus agar terbaca "data tidak tersedia", bukan grafik rusak
-const sambungCelah = { spanGaps: true, segment: { borderDash: (c) => (c.p0.skip || c.p1.skip ? [4, 4] : undefined) } };
+const sambungCelah = { spanGaps: true, segment: { borderDash: (c) => (c.p1DataIndex - c.p0DataIndex > 1 ? [4, 4] : undefined) } };
 
 // ================================================================== plugin label langsung (selektif) & garis acuan
 Chart.register(

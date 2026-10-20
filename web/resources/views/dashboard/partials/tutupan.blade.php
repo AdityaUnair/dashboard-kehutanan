@@ -9,7 +9,7 @@
           sub="Luas lahan yang benar-benar tertutup hutan (di dalam maupun di luar kawasan), hasil penafsiran citra satelit KLHK.">
     <div class="grid gap-4 xl:grid-cols-2">
         <x-grafik id="chartTutupanTren" judul="Tutupan hutan nasional, 2018–{{ $tutupan['tahun_akhir'] }}"
-                  ket="Luas hutan (ha). Celah di 2020 = data tidak valid di sumber, sengaja tidak digambar." tinggi="h-80" />
+                  ket="Luas hutan (ha). Ruas putus-putus 2019→2021: tahun 2020 tidak ada titiknya karena data sumber tidak valid." tinggi="h-80" />
         <x-grafik id="chartTutupanProvinsi" judul="Perubahan tutupan hutan per provinsi, 2018 → {{ $tutupan['tahun_akhir'] }}"
                   ket="8 penurunan terbesar (merah) dan 5 kenaikan terbesar (biru), ha" tinggi="h-80" />
     </div>
