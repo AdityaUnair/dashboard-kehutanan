@@ -93,9 +93,12 @@ class DashboardService
             'Produksi Konversi' => $rows->sum('produksi_konversi_ha'),
         ];
         $top3 = $rows->take(3);
+        $nasional = KawasanHutan::selectRaw('tahun, SUM(total_ha) total')->groupBy('tahun')->orderBy('tahun')->pluck('total', 'tahun');
 
         return [
             'tahun' => $tahun,
+            'awal' => ['tahun' => $nasional->keys()->first(), 'total' => (float) $nasional->first()],
+            'akhir' => ['tahun' => $nasional->keys()->last(), 'total' => (float) $nasional->last()],
             'provinsi' => $rows->map(fn ($r) => [
                 'nama' => $this->nama($r->kode_bps),
                 'lindung' => (float) $r->hutan_lindung_ha,
@@ -103,7 +106,7 @@ class DashboardService
                 'produksi' => (float) ($r->produksi_terbatas_ha + $r->produksi_tetap_ha + $r->produksi_konversi_ha),
             ])->values(),
             'fungsi' => $fungsi,
-            'nasional' => KawasanHutan::selectRaw('tahun, SUM(total_ha) total')->groupBy('tahun')->pluck('total', 'tahun'),
+            'nasional' => $nasional,
             'top3' => $top3->map(fn ($r) => $this->nama($r->kode_bps))->values(),
             'top3_persen' => $top3->sum('total_ha') / $total * 100,
             'papua_persen' => $rows->whereIn('kode_bps', ['91', '94'])->sum('total_ha') / $total * 100,
@@ -127,10 +130,11 @@ class DashboardService
 
         return [
             'tahun_akhir' => $akhir,
+            // Rentang tahun lengkap; tahun yang dibuang saat transformasi (2020) tetap muncul sebagai celah
+            'tahun' => range(self::TAHUN_AWAL, $akhir),
             'nasional' => $nasional->map(fn ($r) => ['tahun' => $r->tahun, 'hutan' => (float) $r->hutan,
                 'persen' => $r->hutan / $r->total * 100]),
-            'turun' => $perubahan->take(10)->values(),
-            'naik' => $perubahan->reverse()->take(5)->values(),
+            'perubahan' => $perubahan->take(8)->concat($perubahan->reverse()->take(5)->reverse())->values(),
             'jumlah_turun' => $perubahan->where('selisih', '<', 0)->count(),
             'jumlah_provinsi' => $perubahan->count(),
         ];
@@ -187,6 +191,7 @@ class DashboardService
         return $m + [
             'puncak' => $puncak,
             'puncak_kedua' => $m['nasional']->sortDesc()->keys()->get(1),
+            'sorot' => $m['nasional']->sortDesc()->keys()->take(2)->values(),
             'wilayah_puncak' => $wilayah->keys()->take(2)->values(),
             'wilayah_puncak_persen' => $wilayah->take(2)->sum() / $wilayah->sum() * 100,
         ];
@@ -264,9 +269,12 @@ class DashboardService
         $kayu = $kumpul(ProduksiKayu::whereBetween('tahun', [self::TAHUN_AWAL, $akhir])->get(), 'produksi_m3');
         $defor = $kumpul(Deforestasi::where('tahun_awal', '>=', self::TAHUN_AWAL)->where('tahun_akhir', '<=', $akhir)->get(), 'total_ha');
 
+        // Maksimal 3 warna agar tetap terbedakan (termasuk buta warna): dua pulau utama + sisanya
+        $kelompok = fn ($wilayah) => in_array($wilayah, ['Sumatera', 'Kalimantan']) ? $wilayah : 'Wilayah lain';
+
         $titik = $defor->map(fn ($d, $kode) => [
             'nama' => $kode === '64' ? 'Kalimantan Timur + Utara' : $this->nama($kode),
-            'wilayah' => $this->provinsi()[$kode]->wilayah,
+            'wilayah' => $kelompok($this->provinsi()[$kode]->wilayah),
             'karhutla' => $karhutla[$kode] ?? 0,
             'deforestasi' => $d,
             'kayu' => $kayu[$kode] ?? 0,
@@ -277,7 +285,7 @@ class DashboardService
             'titik' => $titik,
             'r_karhutla_defor' => $this->korelasi($titik->pluck('karhutla'), $titik->pluck('deforestasi')),
             'r_kayu_defor' => $this->korelasi($titik->pluck('kayu'), $titik->pluck('deforestasi')),
-            'wilayah' => $this->provinsi()->pluck('wilayah')->unique()->values(),
+            'wilayah' => ['Sumatera', 'Kalimantan', 'Wilayah lain'],
         ];
     }
 

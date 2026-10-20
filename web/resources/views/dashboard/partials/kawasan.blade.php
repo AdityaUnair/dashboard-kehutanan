@@ -1,41 +1,48 @@
 @use('App\Support\Format', 'F')
 
-<section class="bagian" id="kawasan">
-    <div class="bagian-kepala">
-        <span class="no">1</span><h2>Seharusnya: luas kawasan hutan</h2>
-        <span class="label-sumber">D1 · BPS · XLSX · ha</span>
-    </div>
-    <p class="sub">Kawasan hutan adalah wilayah yang <em>ditetapkan</em> pemerintah sebagai hutan, bukan hasil pengamatan lapangan.</p>
+@php
+    $perubahanKawasan = ($kawasan['akhir']['total'] - $kawasan['awal']['total']) / $kawasan['awal']['total'] * 100;
+@endphp
 
-    <div class="grid-2">
-        <div class="kartu">
-            <h3>Luas kawasan hutan per provinsi, {{ $kawasan['tahun'] }}</h3>
-            <div class="ket">Dipecah menurut fungsi. Kalimantan Timur masih termasuk Kalimantan Utara.</div>
-            <div class="chart tinggi"><canvas id="chartKawasanProvinsi"></canvas></div>
-        </div>
-        <div class="tumpuk">
+<x-bagian id="kawasan" nomor="1" judul="Seharusnya: luas kawasan hutan" sumber="D1 · BPS · XLSX · ha"
+          sub="Kawasan hutan adalah wilayah yang ditetapkan pemerintah sebagai hutan lewat SK Menteri — status hukum, bukan hasil pengamatan lapangan.">
+    <div class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <x-grafik id="chartKawasanProvinsi" judul="Luas kawasan hutan per provinsi, {{ $kawasan['tahun'] }}"
+                  ket="Dipecah menurut fungsi. Kalimantan Timur masih termasuk Kalimantan Utara." tinggi="h-[600px]" />
+
+        <div class="grid content-start gap-4">
+            <x-grafik id="chartKawasanFungsi" judul="Luas menurut fungsi kawasan, {{ $kawasan['tahun'] }}"
+                      ket="Total nasional {{ F::ringkas(array_sum($kawasan['fungsi'])) }} ha" tinggi="h-56" />
+
             <div class="kartu">
-                <h3>Komposisi fungsi kawasan nasional</h3>
-                <div class="ket">Total {{ F::ringkas(array_sum($kawasan['fungsi'])) }} ha</div>
-                <div class="chart"><canvas id="chartKawasanFungsi"></canvas></div>
-            </div>
-            <div class="kartu">
-                <h3>Total nasional per tahun</h3>
-                <div class="ket">Sumbu dimulai dari 125 jt ha agar perubahan kecil terlihat</div>
-                <div class="chart" style="height:170px"><canvas id="chartKawasanTren"></canvas></div>
+                <div class="kartu-judul">Total nasional nyaris tidak berubah</div>
+                <div class="kartu-ket">Cukup satu angka, bukan grafik: perubahannya terlalu kecil untuk digambar</div>
+                <div class="flex items-end gap-6">
+                    <div>
+                        <div class="text-xs text-ink-3">{{ $kawasan['awal']['tahun'] }}</div>
+                        <div class="text-2xl font-bold tracking-tight">{{ F::ringkas($kawasan['awal']['total']) }} <span class="text-sm font-medium text-ink-3">ha</span></div>
+                    </div>
+                    <div class="pb-1 text-ink-3">→</div>
+                    <div>
+                        <div class="text-xs text-ink-3">{{ $kawasan['akhir']['tahun'] }}</div>
+                        <div class="text-2xl font-bold tracking-tight">{{ F::ringkas($kawasan['akhir']['total']) }} <span class="text-sm font-medium text-ink-3">ha</span></div>
+                    </div>
+                    <div class="ml-auto pb-1 text-sm font-semibold text-ink-2">{{ F::persen($perubahanKawasan, 2, true) }}</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="insight">
-        <p><b class="tag">Terlihat</b>
+    <x-insight>
+        <x-slot:terlihat>
             Tiga provinsi ({{ $kawasan['top3']->join(', ', ' dan ') }}) memegang {{ F::persen($kawasan['top3_persen']) }} kawasan hutan nasional;
-            Papua dan Papua Barat saja {{ F::persen($kawasan['papua_persen']) }}. {{ F::persen($kawasan['produksi_persen'], 0) }} kawasan berfungsi
-            <em>produksi</em> (boleh ditebang dengan izin). Luas total nyaris tidak berubah sepanjang 2018–{{ $kawasan['tahun'] }}.</p>
-        <p><b class="tag">Kenapa</b>
-            Luas kawasan hanya berubah bila ada SK penetapan baru (mis. Bengkulu dan Kalimantan Selatan memperbarui SK pada 2023).
-            Karena itu angka ini menggambarkan <em>rencana</em>, bukan kondisi hutan sebenarnya.</p>
-        <p><b class="tag">Lanjut</b>
-            Apakah kawasan itu memang masih berhutan? Bagian 2 membandingkannya dengan tutupan hutan dari citra satelit.</p>
-    </div>
-</section>
+            Papua dan Papua Barat saja {{ F::persen($kawasan['papua_persen']) }}. Sekitar {{ F::persen($kawasan['produksi_persen'], 0) }} kawasan
+            berfungsi <em>produksi</em> (boleh ditebang dengan izin).
+        </x-slot:terlihat>
+        <x-slot:kenapa>
+            Luas kawasan hanya berubah bila ada SK penetapan baru (mis. Bengkulu dan Kalimantan Selatan memperbarui SK pada 2023). Karena itu angka
+            ini menggambarkan <em>rencana</em>, bukan kondisi hutan sebenarnya.
+        </x-slot:kenapa>
+        <x-slot:lanjut>Apakah kawasan itu memang masih berhutan? Bagian 2 melihat tutupan hutan dari citra satelit.</x-slot:lanjut>
+    </x-insight>
+</x-bagian>

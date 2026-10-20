@@ -33,7 +33,9 @@ Link sumber dan catatan tiap file: [`data/raw/SUMBER_DATA.md`](data/raw/SUMBER_D
 
 ## Menjalankan
 
-Prasyarat: XAMPP (MariaDB menyala), Python 3.10+, PHP 8.2+, Composer.
+Prasyarat: XAMPP (MariaDB menyala), Python 3.10+, PHP 8.2+, Composer, Node.js 20+.
+
+Stack: **Python** (ETL) · **MariaDB** (XAMPP) · **Laravel 13** (MVC + Blade components) · **Tailwind CSS 4** · **Chart.js 4**, dibangun dengan **Vite**.
 
 ```bash
 # 1. Konfigurasi
@@ -50,6 +52,8 @@ cd ..
 # 4. Website
 cd web
 composer install
+npm install
+npm run build                     # kompilasi Tailwind + Chart.js ke public/build
 php artisan key:generate
 php artisan migrate --seed        # tabel users/sessions + akun demo
 php artisan serve                 # buka http://localhost:8000
@@ -77,9 +81,14 @@ dashboard-kehutanan/
     ├── app/Http/Controllers/   AuthController, DashboardController
     ├── app/Models/             satu model per tabel
     ├── app/Services/           DashboardService (olah data untuk grafik)
-    ├── resources/views/        auth/, dashboard/, dashboard/partials/
-    └── public/{css,js}/        gaya & grafik (Chart.js)
+    ├── resources/views/        auth/, dashboard/, dashboard/partials/, components/ (x-bagian, x-grafik, x-insight)
+    ├── resources/css/app.css   Tailwind: token warna & komponen (kartu, insight, tabel)
+    └── resources/js/dashboard.js  semua grafik Chart.js + tabel pendamping
 ```
+
+Aturan visualisasi yang dipakai: satu sumbu per grafik (satuan berbeda dibandingkan lewat indeks 2018 = 100), warna = identitas
+data dan konsisten di seluruh halaman (palet lolos uji buta warna), garis lurus untuk data tahunan, label langsung hanya di titik
+penting, dan setiap grafik punya **tabel data** pendamping.
 
 ## Keterbatasan data (ringkas)
 

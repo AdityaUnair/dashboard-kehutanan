@@ -1,9 +1,110 @@
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+@source '../js/**/*.js';
 
+/*
+ * Token desain. Warna data (s1–s4, naik/turun) mengikuti palet tervalidasi buta warna;
+ * hijau "brand" hanya untuk antarmuka (sidebar, tombol, aksen), tidak untuk data.
+ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+    --color-page: #f6f7f4;
+    --color-surface: #fcfcfb;
+    --color-ink: #1b1d1a;
+    --color-ink-2: #52514e;
+    --color-ink-3: #898781;
+    --color-grid: #e1e0d9;
+    --color-garis: #c3c2b7;
+
+    --color-brand: #1d6949;
+    --color-brand-gelap: #143e2d;
+    --color-brand-lembut: #e3efe7;
+
+    --color-s1: #2a78d6;
+    --color-s2: #eb6834;
+    --color-s3: #1baf7a;
+    --color-s4: #eda100;
+    --color-naik: #2a78d6;
+    --color-turun: #e34948;
+    --color-redup: #d6d5ce;
+
+    --color-peringatan: #fdf6ec;
+    --color-peringatan-garis: #ec835a;
+}
+
+@layer components {
+    .kartu {
+        @apply min-w-0 rounded-2xl border border-black/10 bg-surface p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)];
+    }
+    .kartu-judul {
+        @apply text-[15px] font-semibold text-ink;
+    }
+    .kartu-ket {
+        @apply mt-0.5 mb-4 text-xs text-ink-3;
+    }
+    .label-sumber {
+        @apply ml-auto inline-flex items-center rounded-full bg-brand-lembut px-2.5 py-0.5 text-[11px] font-semibold whitespace-nowrap text-brand;
+    }
+    .nomor-bagian {
+        @apply rounded-lg bg-brand-lembut px-2 py-0.5 text-[13px] font-bold text-brand;
+    }
+
+    /* Pola insight: apa yang terlihat -> kenapa -> sambungan ke bagian berikutnya */
+    .insight {
+        @apply mt-4 grid gap-2 rounded-r-xl border-l-4 border-brand bg-brand-lembut/40 px-4 py-3 text-[13.5px] leading-relaxed text-ink-2;
+    }
+    .insight b {
+        @apply mr-2 inline-block min-w-20 text-[10.5px] font-bold tracking-wider text-brand uppercase;
+    }
+    .insight.peringatan {
+        @apply border-peringatan-garis bg-peringatan;
+    }
+    .insight.peringatan b {
+        @apply text-[#b4552a];
+    }
+
+    .tabel-data {
+        @apply w-full border-collapse text-[12.5px];
+    }
+    .tabel-data th {
+        @apply border-b border-grid px-2.5 py-2 text-left text-[10.5px] font-semibold tracking-wider text-ink-3 uppercase;
+    }
+    .tabel-data td {
+        @apply border-b border-grid px-2.5 py-2 align-top text-ink-2;
+    }
+    .tabel-data .angka {
+        @apply text-right tabular-nums;
+    }
+
+    .pil-ok {
+        @apply inline-flex items-center gap-1 rounded-full bg-brand-lembut px-2 py-0.5 text-[11px] font-semibold text-brand;
+    }
+    .pil-cek {
+        @apply inline-flex items-center gap-1 rounded-full bg-peringatan px-2 py-0.5 text-[11px] font-semibold text-[#b4552a];
+    }
+
+    /* Tampilan tabel pendamping setiap grafik (aksesibilitas & bukti angka) */
+    details.lihat-tabel {
+        @apply mt-3 text-xs text-ink-3;
+    }
+    details.lihat-tabel summary {
+        @apply cursor-pointer font-medium select-none hover:text-ink-2;
+    }
+    details.lihat-tabel .isi {
+        @apply mt-2 max-h-72 overflow-auto rounded-lg border border-grid;
+    }
+
+    .nav-tautan {
+        @apply block rounded-lg px-3 py-2 text-[13.5px] text-white/75 transition-colors hover:bg-white/10 hover:text-white;
+    }
+    .nav-tautan.aktif {
+        @apply bg-white/12 text-white;
+    }
+}
+
+html {
+    scroll-behavior: smooth;
 }

@@ -1,39 +1,52 @@
 @use('App\Support\Format', 'F')
 
-<section id="ringkasan">
-    <div class="eyebrow">Integrasi 5 sumber data · 2018–2025</div>
-    <h1 class="judul">Hutan Indonesia 2018–2025: berapa yang tersisa, dan apa yang menggerusnya?</h1>
-    <p class="sub">
-        Lima data kehutanan dari BPS dan KLHK dalam format berbeda (XLSX, CSV, JSON) diekstrak, diseragamkan, lalu dimuat
-        ke satu database. Bagian 1–5 membahas tiap data; bagian gabungan menyambungkan semuanya.
+@php
+    $tiles = [
+        ['Luas kawasan hutan '.$kpi['kawasan']['tahun'], F::ringkas($kpi['kawasan']['nilai']), 'ha',
+            'Status hukum (SK Menteri)', null, 'D1'],
+        ['Tutupan hutan '.$kpi['tutupan']['tahun'], F::ringkas($kpi['tutupan']['nilai']), 'ha',
+            F::persen($kpi['tutupan']['persen']).' daratan', [$kpi['tutupan']['perubahan'], 'vs 2018', true], 'D2'],
+        ['Deforestasi netto '.$kpi['deforestasi']['periode'], F::ringkas($kpi['deforestasi']['nilai']), 'ha/th',
+            null, [$kpi['deforestasi']['perubahan'], 'vs 2018–2019', false], 'D5'],
+        ['Kebakaran hutan & lahan '.$kpi['karhutla']['tahun'], F::ringkas($kpi['karhutla']['nilai']), 'ha',
+            'Puncak '.$kpi['karhutla']['puncak_tahun'].': '.F::ringkas($kpi['karhutla']['puncak']).' ha', null, 'D3'],
+        ['Produksi kayu bulat '.$kpi['kayu']['tahun'], F::ringkas($kpi['kayu']['nilai']), 'm³',
+            null, [$kpi['kayu']['perubahan'], 'vs 2018', null], 'D4'],
+    ];
+@endphp
+
+<section id="ringkasan" class="scroll-mt-6">
+    <p class="text-[11px] font-semibold tracking-[0.18em] text-brand uppercase">Integrasi 5 sumber data · 2018–2025</p>
+    <h1 class="mt-2 max-w-4xl text-[26px] leading-tight font-bold tracking-tight md:text-[32px]">
+        Hutan Indonesia 2018–2025: berapa yang tersisa, dan apa yang menggerusnya?
+    </h1>
+    <p class="mt-3 max-w-3xl text-[15px] text-ink-2">
+        Lima data kehutanan dari BPS dan KLHK dalam tiga format (XLSX, CSV, JSON) diekstrak, diseragamkan, lalu dimuat ke satu
+        database. Bagian 1–5 membahas tiap data; bagian gabungan menyambungkan semuanya.
     </p>
 
-    <div class="kpi">
-        <div class="kpi-item">
-            <div class="kpi-label">Luas kawasan hutan {{ $kpi['kawasan']['tahun'] }}</div>
-            <div class="kpi-nilai">{{ F::ringkas($kpi['kawasan']['nilai']) }} <small>ha</small></div>
-            <div class="kpi-kaki">Status hukum (SK Menteri) · D1</div>
-        </div>
-        <div class="kpi-item" style="--warna: var(--teal)">
-            <div class="kpi-label">Tutupan hutan {{ $kpi['tutupan']['tahun'] }}</div>
-            <div class="kpi-nilai">{{ F::ringkas($kpi['tutupan']['nilai']) }} <small>ha</small></div>
-            <div class="kpi-kaki">{{ F::persen($kpi['tutupan']['persen']) }} daratan ·
-                <span class="{{ $kpi['tutupan']['perubahan'] >= 0 ? 'turun' : 'naik' }}">{{ F::persen($kpi['tutupan']['perubahan'], 1, true) }}</span> vs 2018 · D2</div>
-        </div>
-        <div class="kpi-item" style="--warna: var(--orange)">
-            <div class="kpi-label">Deforestasi netto {{ $kpi['deforestasi']['periode'] }}</div>
-            <div class="kpi-nilai">{{ F::ringkas($kpi['deforestasi']['nilai']) }} <small>ha</small></div>
-            <div class="kpi-kaki"><span class="turun">{{ F::persen($kpi['deforestasi']['perubahan'], 0, true) }}</span> vs 2018–2019 · D5</div>
-        </div>
-        <div class="kpi-item" style="--warna: var(--fire)">
-            <div class="kpi-label">Kebakaran hutan & lahan {{ $kpi['karhutla']['tahun'] }}</div>
-            <div class="kpi-nilai">{{ F::ringkas($kpi['karhutla']['nilai']) }} <small>ha</small></div>
-            <div class="kpi-kaki">Puncak {{ $kpi['karhutla']['puncak_tahun'] }}: {{ F::ringkas($kpi['karhutla']['puncak']) }} ha · D3</div>
-        </div>
-        <div class="kpi-item" style="--warna: var(--wood)">
-            <div class="kpi-label">Produksi kayu bulat {{ $kpi['kayu']['tahun'] }}</div>
-            <div class="kpi-nilai">{{ F::ringkas($kpi['kayu']['nilai']) }} <small>m³</small></div>
-            <div class="kpi-kaki"><span class="naik">{{ F::persen($kpi['kayu']['perubahan'], 1, true) }}</span> vs 2018 · D4</div>
-        </div>
+    <div class="mt-7 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        @foreach ($tiles as [$label, $nilai, $satuan, $catatan, $delta, $kode])
+            <div class="kartu p-4">
+                <div class="flex items-start justify-between gap-2 text-xs font-medium text-ink-2">
+                    <span>{{ $label }}</span><span class="text-[10.5px] font-semibold text-ink-3">{{ $kode }}</span>
+                </div>
+                <div class="mt-2 text-[26px] leading-none font-bold tracking-tight">
+                    {{ $nilai }} <span class="text-sm font-medium text-ink-3">{{ $satuan }}</span>
+                </div>
+                <div class="mt-2 text-xs text-ink-3">
+                    @if ($delta)
+                        @php [$v, $teks, $baikNaik] = $delta; @endphp
+                        <span @class([
+                            'font-semibold',
+                            'text-[#1f6b3a]' => $baikNaik === true ? $v > 0 : ($baikNaik === false ? $v < 0 : false),
+                            'text-[#a33433]' => $baikNaik === true ? $v < 0 : ($baikNaik === false ? $v > 0 : false),
+                            'text-ink-2' => $baikNaik === null,
+                        ])>{{ $v > 0 ? '▲' : '▼' }} {{ F::persen(abs($v), $baikNaik === false ? 0 : 1) }}</span> {{ $teks }}
+                    @endif
+                    {{ $catatan }}
+                </div>
+            </div>
+        @endforeach
     </div>
 </section>
