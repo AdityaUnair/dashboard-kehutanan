@@ -140,7 +140,7 @@
     .tab {
         @apply relative shrink-0 rounded-lg px-3 py-1.5 text-[13px] font-medium text-ink-3 transition-colors hover:text-ink;
     }
-    .tab[aria-selected='true'] {
+    .tab[aria-current='true'] {
         @apply bg-surface-2 text-ink shadow-[inset_0_0_0_1px_var(--garis)];
     }
 
@@ -174,4 +174,20 @@ html {
 
 [hidden] {
     display: none !important;
+}
+
+/* Animasi muncul saat discroll: hanya opacity & transform; tidak aktif bila pengguna memilih reduced motion */
+.muncul {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.muncul.terlihat {
+    opacity: 1;
+    transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
 }

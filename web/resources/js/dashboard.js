@@ -485,28 +485,39 @@ document.querySelectorAll('details.lihat-tabel[data-grafik]').forEach((det) => d
     if (det.open && grafik[det.dataset.grafik]) det.querySelector('.isi').innerHTML = tabelDari(grafik[det.dataset.grafik]);
 }));
 
-// ================================================================== tab utama
-const TAB = ['ringkasan', 'per-data', 'sebaran', 'gabungan', 'integrasi'];
+// ================================================================== satu halaman: grafik digambar saat masuk layar, menu ikut scroll
 const BAGIAN_KE_DATA = { kawasan: 'D1', tutupan: 'D2', deforestasi: 'D5', karhutla: 'D3', kayu: 'D4' };
 
-function bukaTab(id, { simpan = true } = {}) {
-    if (!TAB.includes(id)) id = 'ringkasan';
-    document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== id; });
-    document.querySelectorAll('[data-tab]').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === id)));
-    if (simpan) history.replaceState(null, '', `#${id}`);
-    window.scrollTo({ top: 0, behavior: 'instant' });
-    if (id === 'sebaran') gambarPeta();
-    pastikanGrafik(document.getElementById(`panel-${id}`));
+const pengamatGrafik = new IntersectionObserver((entri) => entri.forEach((e) => {
+    if (e.isIntersecting) pastikanGrafik(e.target.parentElement);
+}), { rootMargin: '0px 0px -10% 0px' });
+document.querySelectorAll('canvas[id]').forEach((cv) => DEF[cv.id] && pengamatGrafik.observe(cv));
+
+const tautanMenu = [...document.querySelectorAll('[data-tab]')];
+const pengamatMenu = new IntersectionObserver((entri) => entri.forEach((e) => {
+    if (e.isIntersecting) tautanMenu.forEach((a) => a.setAttribute('aria-current', String(a.dataset.tab === e.target.id)));
+}), { rootMargin: '-40% 0px -55% 0px' });
+document.querySelectorAll('[data-panel]').forEach((s) => pengamatMenu.observe(s));
+
+// Animasi muncul (memudar + naik sedikit) untuk kartu di bawah layar; dilewati bila pengguna memilih reduced motion
+if (matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+    const pengamatMuncul = new IntersectionObserver((entri, o) => entri.forEach((e) => {
+        if (e.isIntersecting) { e.target.classList.add('terlihat'); o.unobserve(e.target); }
+    }), { rootMargin: '0px 0px -8% 0px' });
+    document.querySelectorAll('main .kartu, main .insight').forEach((el) => {
+        if (el.getBoundingClientRect().top < innerHeight) return;
+        el.style.transitionDelay = `${Math.min([...el.parentElement.children].indexOf(el), 4) * 70}ms`;
+        el.classList.add('muncul');
+        pengamatMuncul.observe(el);
+    });
 }
-document.querySelectorAll('[data-tab]').forEach((t) => t.addEventListener('click', () => bukaTab(t.dataset.tab)));
-document.querySelectorAll('[data-ke-tab]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); bukaTab(a.dataset.keTab); }));
 
 // ================================================================== per data: dropdown
 const pilihData = document.getElementById('pilihData');
 function tampilkanData(kode) {
     pilihData.value = kode;
     document.querySelectorAll('[data-dataset]').forEach((b) => { b.hidden = b.dataset.dataset !== kode; });
-    pastikanGrafik(document.getElementById('panel-per-data'));
+    pastikanGrafik(document.getElementById('per-data'));
 }
 pilihData.addEventListener('change', () => tampilkanData(pilihData.value));
 [['pilihTahunKarhutla', 'chartKarhutlaProvinsi'], ['pilihTahunKayu', 'chartKayuProvinsi']].forEach(([sel, id]) =>
@@ -667,14 +678,18 @@ document.getElementById('gantiTema').addEventListener('click', () => {
     try { localStorage.setItem('tema', html.dataset.tema); } catch (e) { /* penyimpanan tidak tersedia */ }
     terapkanGayaDasar();
     bangunUlangSemua();
-    if (!document.getElementById('panel-sebaran').hidden) gambarPeta();
+    gambarPeta();
 });
 
 // ================================================================== mulai
+// Tautan ke bagian satu data (mis. #karhutla) memilih data itu di dropdown dulu, lalu menggulir ke sana
 function ikutiHash() {
-    const hash = location.hash.slice(1);
-    if (BAGIAN_KE_DATA[hash]) { tampilkanData(BAGIAN_KE_DATA[hash]); bukaTab('per-data'); } else { bukaTab(hash || 'ringkasan', { simpan: false }); }
+    const id = location.hash.slice(1);
+    if (!BAGIAN_KE_DATA[id]) return;
+    tampilkanData(BAGIAN_KE_DATA[id]);
+    document.getElementById(id).scrollIntoView();
 }
 terapkanGayaDasar();
+gambarPeta();
 ikutiHash();
 window.addEventListener('hashchange', ikutiHash);
