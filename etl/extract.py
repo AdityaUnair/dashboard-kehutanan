@@ -81,12 +81,14 @@ def extract_d3():
 
 
 def baris_dari_json_bps(data, nama_sumber):
+    """Bongkar file JSON tabel dinamis BPS menjadi baris provinsi-tahun-nilai."""
     var = data["var"][0]["val"]
     turvar = data["turvar"][0]["val"]
     turtahun = data["turtahun"][0]["val"]
     rows = []
     for th in data["tahun"]:
         for v in data["vervar"]:
+            # kunci datacontent = vervar + var + turvar + tahun + turtahun
             kunci = f"{v['val']}{var}{turvar}{th['val']}{turtahun}"
             if kunci in data["datacontent"]:
                 rows.append((nama_sumber, kunci, str(v["val"]), v["label"], int(th["label"]),

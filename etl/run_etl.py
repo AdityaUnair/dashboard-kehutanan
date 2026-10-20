@@ -1,9 +1,7 @@
 """Jalankan seluruh pipeline: EXTRACT -> TRANSFORM + LOAD -> REPLICATION.
 
-  python run_etl.py            # pakai file mentah yang sudah ada di data/raw
+  python run_etl.py            # baca semua file mentah di data/raw
 """
-import sys
-
 import extract
 import replicate
 import transform_load

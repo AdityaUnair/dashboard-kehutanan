@@ -13,6 +13,7 @@ Tugas Integrasi Aplikasi Korporasi (Enterprise Application Integration) — Kelo
 | D1 | Tutupan lahan nasional menurut kelas, di dalam & di luar kawasan hutan (2018–2023) | BPS / KLHK | XLS | unduh file |
 | D2 | Tutupan lahan hutan & non-hutan per provinsi (2018–2023) | BPS / KLHK | CSV | unduh file |
 | D3 | Luas kebakaran hutan & lahan per provinsi (2018–2025, + 2026 Januari–Juli) | SiPongi KLHK | XLSX | unduh file |
+| D4 | Produksi kayu bulat per provinsi (2018–2025) | BPS | JSON | unduh file (per tahun) |
 | D5 | Deforestasi netto per provinsi (2017–2018 s.d. 2021–2022) | BPS / KLHK | CSV | unduh file |
 
 Link sumber dan catatan tiap file: [`data/raw/SUMBER_DATA.md`](data/raw/SUMBER_DATA.md).
@@ -20,16 +21,19 @@ Link sumber dan catatan tiap file: [`data/raw/SUMBER_DATA.md`](data/raw/SUMBER_D
 ## Arsitektur (three-tier)
 
 ```
- data/raw (XLS, XLSX, CSV) ─┐
-                        └──────────► kehutanan_staging ──────► kehutanan_master ──────► kehutanan_dashboard ──► Laravel (web/)
-                                     (teks mentah)              (bersih, kode BPS)       (replika, dibaca web)
+ data/raw (XLS, XLSX,       EXTRACT        TRANSFORM + LOAD         REPLICATION            PRESENTATION
+       CSV, JSON) ─────────────────► kehutanan_staging ──────► kehutanan_master ──────► replika ──► Laravel (web/)
+                                     (teks mentah)              (bersih, kode BPS)       (slave / kehutanan_dashboard)
                                                                       ▲
+                 file sumber D4 (JSON) ── SYNCHRONIZATION (one-way, upsert hanya baris berubah)
 ```
 
 | Teknik Data-level EAI | File | Bukti di dashboard |
 |---|---|---|
+| Extract | `etl/extract.py` | Log ETL tahap `extract` |
 | Transformation | `etl/transform_load.py` (aturan T1–T9), `etl/angka.py`, `etl/provinsi.py` | Log ETL tahap `transform-load` + cek total |
 | Replication | Master-Slave MariaDB asli (`scripts/replika.sh`, opsional) atau simulasi `etl/replicate.py` (inkremental + checksum) | Kartu "Replikasi master → replika" (mode aktif, status slave, checksum) |
+| Synchronization | `etl/sync_d4.py` (file sumber D4 → master, one-way) | Kartu "Sinkronisasi file sumber → master" |
 
 ## Menjalankan
 
@@ -47,6 +51,7 @@ cd web && php artisan serve                         # buka http://localhost:8000
 
 Script setup membuat 3 database dari `sql/schema.sql`, memasang library Python di `.venv`, menjalankan pipeline ETL dari file
 mentah di `data/raw`, lalu menyiapkan Laravel (composer, npm build, key, migrasi, akun demo). Aman dijalankan ulang.
+Semua data dibaca dari file di `data/raw` (tidak perlu koneksi internet).
 
 ### Akun
 
@@ -60,6 +65,7 @@ dashboard; peran *pengguna* hanya melihat dashboard. Password akun disimpan seba
 cp .env.example .env && cp web/.env.example web/.env
 /Applications/XAMPP/xamppfiles/bin/mysql -h 127.0.0.1 -u root < sql/schema.sql
 python3 -m venv .venv && .venv/bin/pip install -r etl/requirements.txt
+cd etl && ../.venv/bin/python run_etl.py && cd ..
 cd web && composer install && npm install && npm run build
 php artisan key:generate && php artisan migrate --seed && php artisan serve
 ```
@@ -95,9 +101,11 @@ bagian Integrasi. Setelah menjalankan ulang `sql/schema.sql`, jalankan lagi `scr
 
 ```bash
 cd etl
+../.venv/bin/python sync_d4.py --simulasi
 ```
 
-yang benar. Refresh dashboard sebelum dan sesudah Enter untuk melihat perubahannya. Pada mode Master-Slave perubahan di master
+Script mengubah produksi kayu Riau 2025 di master menjadi 0, menunggu Enter, lalu membandingkan master dengan file sumber D4
+dan mengembalikan nilai yang benar (hanya baris yang berbeda yang diperbarui). Refresh dashboard sebelum dan sesudah Enter untuk melihat perubahannya. Pada mode Master-Slave perubahan di master
 langsung tersalin ke slave tanpa menjalankan script replikasi.
 
 ## Struktur folder

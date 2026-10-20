@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/** D4 - Produksi kayu bulat per provinsi per tahun (m3). Sumber: BPS (JSON). */
 class ProduksiKayu extends Model
 {
     protected $connection = 'data';

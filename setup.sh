@@ -39,6 +39,7 @@ python3 -m venv .venv
 .venv/bin/pip install -q --disable-pip-version-check -r etl/requirements.txt
 
 langkah "Menjalankan pipeline ETL (extract -> transform/load -> replikasi)"
+(cd etl && ../.venv/bin/python run_etl.py)
 
 langkah "Menyiapkan website Laravel"
 cd web

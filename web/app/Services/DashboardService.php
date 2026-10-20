@@ -280,9 +280,9 @@ class DashboardService
     public function kebakaranVsDeforestasi(): array
     {
         $tahun = range(self::TAHUN_AWAL, 2022);
-        $api = Karhutla::whereIn('tahun', $tahun)->selectRaw('tahun, SUM(luas_ha) v')->groupBy('tahun')->pluck('v', 'tahun');
+        $bakar = Karhutla::whereIn('tahun', $tahun)->selectRaw('tahun, SUM(luas_ha) v')->groupBy('tahun')->pluck('v', 'tahun');
         $hilang = Deforestasi::whereIn('tahun_akhir', $tahun)->selectRaw('tahun_akhir, SUM(total_ha) v')->groupBy('tahun_akhir')->pluck('v', 'tahun_akhir');
-        $x = collect($tahun)->map(fn ($t) => (float) $api[$t]);
+        $x = collect($tahun)->map(fn ($t) => (float) $bakar[$t]);
         $y = collect($tahun)->map(fn ($t) => (float) $hilang[$t]);
         $puncak = $x->search($x->max());
 
@@ -399,6 +399,7 @@ class DashboardService
             'D4' => [
                 'label' => 'Produksi kayu bulat', 'satuan' => 'm³', 'skala' => 'sekuensial', 'kaltaraDigabung' => false,
                 'nilai' => $perTahun(ProduksiKayu::all(), 'tahun', 'produksi_m3'),
+                'catatan' => 'Sumber BPS (file JSON).',
             ],
         ];
 
@@ -423,6 +424,7 @@ class DashboardService
                 ['kode' => 'D1', 'nama' => 'Tutupan lahan menurut kelas (nasional)', 'penerbit' => 'BPS / KLHK', 'format' => 'XLS', 'cara' => 'Unduh file'],
                 ['kode' => 'D2', 'nama' => 'Tutupan lahan hutan & non-hutan', 'penerbit' => 'BPS / KLHK', 'format' => 'CSV', 'cara' => 'Unduh file'],
                 ['kode' => 'D3', 'nama' => 'Luas kebakaran hutan & lahan', 'penerbit' => 'SiPongi KLHK', 'format' => 'XLSX', 'cara' => 'Unduh file'],
+                ['kode' => 'D4', 'nama' => 'Produksi kayu bulat', 'penerbit' => 'BPS', 'format' => 'JSON', 'cara' => 'Unduh file (per tahun)'],
                 ['kode' => 'D5', 'nama' => 'Deforestasi netto', 'penerbit' => 'BPS / KLHK', 'format' => 'CSV', 'cara' => 'Unduh file'],
             ],
             'etl' => EtlLog::where('run_id', $runTerakhir)->orderBy('id')->get(),

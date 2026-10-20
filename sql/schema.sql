@@ -2,6 +2,7 @@
 -- Skema database Dashboard Kehutanan (MariaDB / XAMPP)
 --
 -- Tiga database, mengikuti alur Data-level EAI:
+--   1. kehutanan_staging   : hasil EXTRACT, isi masih teks asli dari file
 --   2. kehutanan_master    : hasil TRANSFORM + LOAD, data bersih & seragam (sumber kebenaran)
 --   3. kehutanan_dashboard : REPLIKA dari master, satu-satunya DB yang dibaca website
 --
@@ -182,6 +183,7 @@ CREATE TABLE replication_log (
     waktu            DATETIME NOT NULL
 );
 
+-- Catatan sinkronisasi file sumber D4 -> master
 CREATE TABLE sync_log (
     id            BIGINT AUTO_INCREMENT PRIMARY KEY,
     dataset       VARCHAR(10) NOT NULL,

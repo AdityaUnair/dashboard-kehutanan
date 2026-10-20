@@ -1,5 +1,6 @@
 @use('App\Support\Format', 'F')
 
+<x-grafik id="chartKayuTren" jangkar="kayu" kode="D4" ikon="kayu" judul="Produksi kayu bulat nasional per tahun" ket="BPS · JSON · m³ · bisa disinkronkan ulang">
     <x-slot:ringkas>
         Naik terus hingga puncaknya pada {{ $kayu['puncak'] }} ({{ F::ringkas($kayu['nasional'][$kayu['puncak']]) }} m³), lalu turun.
     </x-slot:ringkas>

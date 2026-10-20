@@ -1,9 +1,11 @@
 @use('App\Support\Format', 'F')
 
 <x-judul-panel judul="Status integrasi data"
+               sub="Bukti proses di balik dashboard (data-level EAI): Extract → staging → Transform → master → Replication → replika, ditambah Synchronization dari file sumber D4 ke master." />
 
 <div class="grid gap-3">
     <ol class="grid gap-2 text-[13px] sm:grid-cols-5">
+        @foreach ([['Extract', 'XLS · XLSX · CSV · JSON'], ['Staging', 'teks mentah'], ['Transform + Load', 'aturan T1–T9, upsert'],
                    ['Master', 'data bersih'], ['Replika', 'dibaca website']] as $i => [$tahap, $ket])
             <li class="kartu flex items-center gap-3 p-3">
                 <span class="grid size-7 shrink-0 place-items-center rounded-full bg-brand text-xs font-bold text-white">{{ $i + 1 }}</span>
@@ -28,8 +30,9 @@
         </div>
 
         <div class="kartu">
+            <div class="kartu-judul">Sinkronisasi file sumber → master (D4)</div>
             @if ($sync = $integrasi['sync'])
-                <div class="kartu-ket">Terakhir: {{ $sync->waktu }} · satu arah (BPS → database kita), hanya baris yang berubah yang diperbarui</div>
+                <div class="kartu-ket">Terakhir: {{ $sync->waktu }} · satu arah (file JSON BPS terbaru → database master), hanya baris yang berubah yang diperbarui</div>
                 <div class="grid gap-3 sm:grid-cols-3">
                     @foreach ([['Baris dicek', $sync->baris_dicek], ['Baru / berubah', $sync->baris_baru.' / '.$sync->baris_berubah], ['Sama (tidak disentuh)', $sync->baris_sama]] as [$label, $nilai])
                         <div class="rounded-xl border border-garis bg-surface-2 px-3 py-2.5">
@@ -42,6 +45,7 @@
                     <div class="mt-2 text-xs text-ink-3">Provinsi {{ $d['kode_bps'] }} tahun {{ $d['tahun'] }}: {{ F::angka($d['lama'], 2) }} → {{ F::angka($d['baru'], 2) }} m³</div>
                 @endforeach
             @else
+                <div class="kartu-ket">Belum pernah dijalankan. Jalankan <code>python etl/sync_d4.py</code>.</div>
             @endif
         </div>
     </div>

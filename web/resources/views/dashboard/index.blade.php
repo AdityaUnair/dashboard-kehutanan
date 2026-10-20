@@ -67,6 +67,7 @@
     <section id="integrasi" data-panel="integrasi" class="scroll-mt-28 [&:not(:first-child)]:mt-9">@include('dashboard.partials.integrasi')</section>
 
     <footer class="mt-16 flex flex-wrap items-center justify-between gap-2 border-t border-garis pt-5 text-xs text-ink-3">
+        <span>Sumber: BPS (bps.go.id) · SIPONGI KEMENHUT · KLHK</span>
         <span>Dibaca dari database <code class="text-ink-2">kehutanan_dashboard</code> (replika) hasil pipeline ETL</span>
     </footer>
 </main>
