@@ -576,7 +576,8 @@ function isiTahun() {
     const ds = D.sebaran.dataset[peta.data];
     const daftar = Object.keys(ds.nilai);
     elTahun.innerHTML = daftar.map((t) => `<option value="${t}">${t}</option>`).join('');
-    peta.tahun = daftar.includes(peta.tahun) ? peta.tahun : daftar[daftar.length - 1];
+    // bawaan: tahun penuh terakhir (label berkurung seperti '2026 (Jan–Jul)' = tahun belum lengkap)
+    peta.tahun = daftar.includes(peta.tahun) ? peta.tahun : daftar.filter((t) => !t.includes('(')).pop();
     elTahun.value = peta.tahun;
 }
 

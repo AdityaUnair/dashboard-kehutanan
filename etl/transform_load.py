@@ -184,10 +184,8 @@ def transform_d3(conn):
         if kode is None:
             dibuang["nama tidak dikenal"] += 1
             continue
-        if tahun > TAHUN_MAKS:
-            dibuang[f"tahun {tahun} belum lengkap (data s.d. Juli)"] += 1
-            continue
-        if tahun < TAHUN_MIN:
+        # tahun berjalan (TAHUN_MAKS + 1, baru s.d. Juli) tetap dimuat; web hanya memakainya di peta & peringkat, bukan tren
+        if not (TAHUN_MIN <= tahun <= TAHUN_MAKS + 1):
             dibuang["di luar periode"] += 1
             continue
         _tambah(agregat, (kode, tahun), {"luas_ha": luas})
@@ -197,7 +195,7 @@ def transform_d3(conn):
         hasil.append({"kode_bps": kode, "tahun": tahun, "luas_ha": round(v.get("luas_ha", 0), 2),
                       "updated_at": sekarang()})
         jumlah[tahun] += v.get("luas_ha", 0)
-    total = {t: v for t, v in total.items() if TAHUN_MIN <= t <= TAHUN_MAKS}
+    total = {t: v for t, v in total.items() if TAHUN_MIN <= t <= TAHUN_MAKS + 1}
     return "fakta_karhutla", ("kode_bps", "tahun"), hasil, len(rows), dibuang, cek_total("D3", jumlah, total)
 
 

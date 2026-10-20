@@ -1,7 +1,7 @@
 @use('App\Support\Format', 'F')
 
 <x-bagian id="karhutla" data-dataset="D3" hidden nomor="4" ikon="api" judul="Penggerus 1: kebakaran hutan dan lahan" sumber="D3 · SiPongi KLHK · XLSX · ha"
-          sub="Luas indikatif kebakaran hutan dan lahan per provinsi. Data 2026 belum dipakai karena baru tercatat sampai Juli.">
+          sub="Luas indikatif kebakaran hutan dan lahan per provinsi. Data 2026 baru tercatat sampai Juli, jadi hanya ditampilkan di peringkat provinsi (bukan di tren).">
     <div class="grid gap-4 xl:grid-cols-2">
         <x-grafik id="chartKarhutlaTren" judul="Luas karhutla nasional per tahun"
                   ket="Dua tahun dengan kebakaran terluas diberi warna; tahun lain abu-abu" tinggi="h-80" />
@@ -10,7 +10,7 @@
                 <label for="pilihTahunKarhutla" class="text-xs text-ink-3">Tahun</label>
                 <select id="pilihTahunKarhutla" class="pilih py-1.5">
                     @foreach ($karhutla['tahun'] as $t)
-                        <option value="{{ $t }}" @selected($t == $karhutla['puncak'])>{{ $t }}</option>
+                        <option value="{{ $t }}" @selected($t == $karhutla['puncak'])>{{ $karhutla['label_tahun'][$t] ?? $t }}</option>
                     @endforeach
                 </select>
             </div>

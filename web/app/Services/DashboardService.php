@@ -20,6 +20,11 @@ class DashboardService
 {
     private const TAHUN_AWAL = 2018;
 
+    /** Karhutla tahun berjalan: datanya baru s.d. Juli, jadi hanya untuk peta & peringkat, tidak untuk tren. */
+    private const KARHUTLA_PARSIAL = 2026;
+
+    private const LABEL_PARSIAL = '2026 (Jan–Jul)';
+
 
     private ?Collection $provinsi = null;
 
@@ -53,7 +58,7 @@ class DashboardService
         $tutupan = TutupanLahan::where('tahun', $tutupanTahun)->selectRaw('SUM(hutan_ha) h, SUM(total_ha) t')->first();
         $tutupanAwal = TutupanLahan::where('tahun', self::TAHUN_AWAL)->sum('hutan_ha');
 
-        $karhutla = Karhutla::selectRaw('tahun, SUM(luas_ha) luas')->groupBy('tahun')->pluck('luas', 'tahun');
+        $karhutla = Karhutla::where('tahun', '<', self::KARHUTLA_PARSIAL)->selectRaw('tahun, SUM(luas_ha) luas')->groupBy('tahun')->pluck('luas', 'tahun');
         $kayu = ProduksiKayu::selectRaw('tahun, SUM(produksi_m3) m3')->groupBy('tahun')->pluck('m3', 'tahun');
         $defor = Deforestasi::selectRaw('periode, SUM(total_ha) total')->groupBy('periode')->orderBy('periode')->pluck('total', 'periode');
 
@@ -194,6 +199,7 @@ class DashboardService
     public function karhutla(): array
     {
         $m = $this->matriks(Karhutla::all(), 'luas_ha');
+        $m['nasional'] = $m['nasional']->except(self::KARHUTLA_PARSIAL); // tren hanya tahun penuh
         $puncak = $m['nasional']->sortDesc()->keys()->first();
         $rows2019 = Karhutla::where('tahun', $puncak)->get();
         $wilayah = $rows2019->groupBy(fn ($r) => $this->provinsi()[$r->kode_bps]->wilayah)
@@ -201,6 +207,7 @@ class DashboardService
 
         return $m + [
             'puncak' => $puncak,
+            'label_tahun' => [self::KARHUTLA_PARSIAL => self::LABEL_PARSIAL],
             'puncak_kedua' => $m['nasional']->sortDesc()->keys()->get(1),
             'sorot' => $m['nasional']->sortDesc()->keys()->take(2)->values(),
             'wilayah_puncak' => $wilayah->keys()->take(2)->values(),
@@ -229,7 +236,7 @@ class DashboardService
     {
         $deret = [
             'Tutupan hutan (D2)' => TutupanLahan::selectRaw('tahun, SUM(hutan_ha) v')->groupBy('tahun')->pluck('v', 'tahun'),
-            'Karhutla (D3)' => Karhutla::selectRaw('tahun, SUM(luas_ha) v')->groupBy('tahun')->pluck('v', 'tahun'),
+            'Karhutla (D3)' => Karhutla::where('tahun', '<', self::KARHUTLA_PARSIAL)->selectRaw('tahun, SUM(luas_ha) v')->groupBy('tahun')->pluck('v', 'tahun'),
             'Produksi kayu (D4)' => ProduksiKayu::selectRaw('tahun, SUM(produksi_m3) v')->groupBy('tahun')->pluck('v', 'tahun'),
             'Deforestasi netto (D5)' => Deforestasi::selectRaw('tahun_akhir tahun, SUM(total_ha) v')->groupBy('tahun_akhir')->pluck('v', 'tahun'),
         ];
@@ -359,8 +366,8 @@ class DashboardService
             ],
             'D3' => [
                 'label' => 'Luas kebakaran hutan & lahan', 'satuan' => 'ha', 'skala' => 'sekuensial', 'kaltaraDigabung' => false,
-                'nilai' => $perTahun(Karhutla::all(), 'tahun', 'luas_ha'),
-                'catatan' => 'Luas indikatif terbakar menurut SiPongi.',
+                'nilai' => $perTahun(Karhutla::all(), 'tahun', 'luas_ha')->keyBy(fn ($v, $t) => $t == self::KARHUTLA_PARSIAL ? self::LABEL_PARSIAL : $t),
+                'catatan' => 'Luas indikatif terbakar menurut SiPongi. Pilihan 2026 hanya berisi data Januari–Juli, jadi belum bisa dibandingkan dengan tahun penuh.',
             ],
             'D4' => [
                 'label' => 'Produksi kayu bulat', 'satuan' => 'm³', 'skala' => 'sekuensial', 'kaltaraDigabung' => false,
