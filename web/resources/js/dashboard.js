@@ -87,6 +87,18 @@ const labelTooltip = (satuan) => (c) => {
 const gayaBatang = { borderRadius: 5, borderSkipped: 'start', maxBarThickness: 30, categoryPercentage: 0.78, barPercentage: 0.86 };
 const gayaTumpuk = () => ({ ...gayaBatang, borderColor: W.permukaan, borderWidth: { right: 2, top: 2 }, borderRadius: 0 });
 const transparan = (warna, a = 0.14) => warna + Math.round(a * 255).toString(16).padStart(2, '0');
+// Skala Y mengikuti data, tapi rentangnya minimal `persen` dari nilai tengah: perubahan nyata terlihat,
+// perubahan yang sangat kecil (mis. kawasan −0,2%) tetap tampak hampir datar.
+const skalaPas = (nilai, persen = 0.06) => {
+    const v = nilai.filter((x) => x !== null && x !== undefined);
+    const lo = Math.min(...v);
+    const hi = Math.max(...v);
+    const tengah = (lo + hi) / 2;
+    const rentang = Math.max(hi - lo, Math.abs(tengah) * persen) * 1.25;
+    return { min: tengah - rentang / 2, max: tengah + rentang / 2 };
+};
+// Celah data (null) disambung garis putus-putus agar terbaca "data tidak tersedia", bukan grafik rusak
+const sambungCelah = { spanGaps: true, segment: { borderDash: (c) => (c.p0.skip || c.p1.skip ? [4, 4] : undefined) } };
 
 // ================================================================== plugin label langsung (selektif) & garis acuan
 Chart.register(
@@ -172,8 +184,7 @@ Object.keys(SPARK).forEach((k) => {
             options: {
                 animation: false,
                 layout: { padding: 2 },
-                // mulai dari 0 agar perubahan kecil (mis. kawasan −0,2%) tidak tampak seperti penurunan tajam
-                scales: { x: { display: false }, y: { display: false, beginAtZero: true, grace: '8%' } },
+                scales: { x: { display: false }, y: { display: false, ...skalaPas(Object.values(deret)) } },
                 plugins: { legend: { display: false }, tooltip: { displayColors: false, callbacks: { title: (i) => i[0].label, label: (c) => ringkas(c.parsed.y) } } },
                 interaction: { mode: 'index', intersect: false },
             },
@@ -181,19 +192,24 @@ Object.keys(SPARK).forEach((k) => {
     };
 });
 
-// ---- ringkasan: indeks gabungan sebagai 4 panel kecil dengan sumbu Y yang sama
+// ---- ringkasan: indeks gabungan sebagai 4 panel kecil, masing-masing dengan skala sendiri (rentang minimal 20 poin)
 const INDEKS = { tutupan: 'Tutupan hutan (D2)', karhutla: 'Karhutla (D3)', kayu: 'Produksi kayu (D4)', deforestasi: 'Deforestasi netto (D5)' };
-const maksIndeks = Math.max(...Object.values(D.indeks.deret).flat().filter((v) => v !== null));
 Object.entries(INDEKS).forEach(([k, label]) => {
     DEF[`indeks-${k}`] = () => {
         const warna = warnaData()[k];
+        const data = D.indeks.deret[label];
+        const kasar = skalaPas([...data, 100], 0.2);
+        // batas dibulatkan ke kelipatan langkah agar label sumbu tidak saling menempel
+        const langkah = [5, 10, 20, 25, 50, 100].find((s) => (kasar.max - kasar.min) / s <= 4) ?? 100;
+        const min = Math.max(0, Math.floor(kasar.min / langkah) * langkah);
+        const max = Math.ceil(kasar.max / langkah) * langkah;
         return {
             type: 'line',
-            data: { labels: D.indeks.tahun, datasets: [{ label, data: D.indeks.deret[label], borderColor: warna, backgroundColor: transparan(warna, 0.12), fill: 'start', pointBackgroundColor: warna, tension: 0, spanGaps: false }] },
+            data: { labels: D.indeks.tahun, datasets: [{ label, data, borderColor: warna, backgroundColor: transparan(warna, 0.12), fill: 'start', pointBackgroundColor: warna, tension: 0, ...sambungCelah }] },
             options: {
                 layout: { padding: { right: 34, top: 6 } },
                 scales: {
-                    y: { min: 0, max: Math.ceil(maksIndeks / 50) * 50, ticks: { stepSize: 100, font: { size: 10 } } },
+                    y: { min, max, ticks: { stepSize: langkah, font: { size: 10 }, callback: (v) => fmt.format(v) } },
                     x: { ...tanpaKisi, ticks: { font: { size: 10 }, callback(v) { const t = String(this.getLabelForValue(v)); return `'${t.slice(2)}`; } } },
                 },
                 plugins: {
@@ -259,7 +275,7 @@ DEF.chartTutupanTren = () => {
     const warna = warnaData().tutupan;
     return {
         type: 'line',
-        data: { labels: tt.tahun, datasets: [{ label: 'Tutupan hutan (ha)', data: tt.tahun.map((t) => perTahun[t]?.hutan ?? null), borderColor: warna, backgroundColor: transparan(warna), fill: 'start', spanGaps: false, tension: 0, pointBackgroundColor: warna }] },
+        data: { labels: tt.tahun, datasets: [{ label: 'Tutupan hutan (ha)', data: tt.tahun.map((t) => perTahun[t]?.hutan ?? null), borderColor: warna, backgroundColor: transparan(warna), fill: 'start', tension: 0, pointBackgroundColor: warna, ...sambungCelah }] },
         options: {
             layout: { padding: { right: 72, top: 8 } },
             scales: { y: { ...sumbuRingkas(), grace: '25%' }, x: tanpaKisi },

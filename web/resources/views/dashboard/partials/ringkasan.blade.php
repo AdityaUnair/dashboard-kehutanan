@@ -78,8 +78,8 @@
             <span class="grid size-8 place-items-center rounded-lg bg-brand-lembut text-brand-teks"><x-ikon nama="grafik" class="size-4" /></span>
             <div class="kartu-judul">Tren gabungan, indeks 2018 = 100</div>
         </div>
-        <div class="kartu-ket mt-2">Satuan tiap data berbeda, jadi semuanya diubah ke indeks (nilai tahun itu ÷ nilai 2018 × 100). Keempat panel
-            memakai sumbu yang sama agar bisa dibandingkan; garis tipis = 100 (sama dengan 2018).</div>
+        <div class="kartu-ket mt-2">Satuan tiap data berbeda, jadi semuanya diubah ke indeks (nilai tahun itu ÷ nilai 2018 × 100). Tiap panel memakai skala sendiri (lihat angka sumbu);
+            garis tipis = 100 (sama dengan 2018), garis putus-putus = data tidak tersedia.</div>
         <div class="grid gap-3 sm:grid-cols-2">
             @foreach ($panelIndeks as [$judul, $kunci, $ikon])
                 <div class="rounded-xl border border-garis bg-surface-2 p-3">
