@@ -3,16 +3,16 @@
 @php
     // [kunci deret, ikon, label, nilai, satuan, keterangan, [perubahan, teks, naik-itu-baik?], kode, kelas warna ikon]
     $tiles = [
+        ['kawasan', 'perisai', 'Luas kawasan hutan '.$kpi['kawasan']['tahun'], F::ringkas($kpi['kawasan']['nilai']), 'ha',
+            'status hukum, nyaris tetap', null, 'D1', 'bg-brand-lembut text-brand-teks'],
         ['tutupan', 'daun', 'Tutupan hutan '.$kpi['tutupan']['tahun'], F::ringkas($kpi['tutupan']['nilai']), 'ha',
             F::persen($kpi['tutupan']['persen']).' daratan', [$kpi['tutupan']['perubahan'], 'vs 2018', true], 'D2', 'bg-brand-lembut text-brand-teks'],
-        ['deforestasi', 'kapak', 'Deforestasi netto '.str_replace('-', '–', $kpi['deforestasi']['periode']), F::ringkas($kpi['deforestasi']['nilai']), 'ha/th',
-            null, [$kpi['deforestasi']['perubahan'], 'vs 2018–2019', false], 'D5', 'bg-[#c58a14]/12 text-[#9a6a0c]'],
         ['karhutla', 'api', 'Kebakaran hutan & lahan '.$kpi['karhutla']['tahun'], F::ringkas($kpi['karhutla']['nilai']), 'ha',
             null, [$kpi['karhutla']['perubahan'], 'vs 2018', false], 'D3', 'bg-peringatan-lembut text-peringatan'],
         ['kayu', 'kayu', 'Produksi kayu bulat '.$kpi['kayu']['tahun'], F::ringkas($kpi['kayu']['nilai']), 'm³',
             null, [$kpi['kayu']['perubahan'], 'vs 2018', null], 'D4', 'bg-kayu-lembut text-kayu'],
-        ['kawasan', 'perisai', 'Luas kawasan hutan '.$kpi['kawasan']['tahun'], F::ringkas($kpi['kawasan']['nilai']), 'ha',
-            'status hukum, nyaris tetap', null, 'D1', 'bg-brand-lembut text-brand-teks'],
+        ['deforestasi', 'kapak', 'Deforestasi netto '.str_replace('-', '–', $kpi['deforestasi']['periode']), F::ringkas($kpi['deforestasi']['nilai']), 'ha/th',
+            null, [$kpi['deforestasi']['perubahan'], 'vs 2018–2019', false], 'D5', 'bg-[#c58a14]/12 text-[#9a6a0c]'],
     ];
     $temuan = [
         ['karhutla', 'api', 'Karhutla meledak di tahun El Niño',
