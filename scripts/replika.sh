@@ -71,7 +71,9 @@ collation-server=utf8mb4_unicode_ci
 server-id=2
 read_only=1
 relay-log=$DIR/data/relay-bin
-replicate-do-db=kehutanan_master
+# Saring per TABEL, bukan per database bawaan koneksi (replicate-do-db): perintah struktur seperti
+# TRUNCATE/ALTER untuk database lain yang kebetulan dijalankan lewat koneksi ke master tidak ikut disalin.
+replicate-wild-do-table=kehutanan_master.%
 CNF
 }
 
@@ -164,7 +166,7 @@ perintah_status() {
         echo "Slave: MATI (port $PORT_SLAVE). Website memakai mode script."
         return 0
     fi
-    slave -e "SHOW SLAVE STATUS\G" | grep -E ' (Master_Host|Master_Port|Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master|Last_IO_Error|Last_SQL_Error|Replicate_Do_DB):'
+    slave -e "SHOW SLAVE STATUS\G" | grep -E ' (Master_Host|Master_Port|Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master|Last_IO_Error|Last_SQL_Error|Replicate_Wild_Do_Table):'
 }
 
 case "${1:-status}" in

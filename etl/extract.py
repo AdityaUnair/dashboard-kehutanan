@@ -135,20 +135,28 @@ TABEL = {
 }
 
 
+def muat_staging(conn, dataset, waktu):
+    """Baca file sumber satu data lalu ganti isi tabel staging-nya. Dipakai ETL penuh dan sinkronisasi."""
+    tabel, fungsi, kolom = TABEL[dataset]
+    rows = [r + (waktu,) for r in fungsi()]
+    isian = ", ".join(["%s"] * (kolom.count(",") + 2))
+    with conn.cursor() as cur:
+        # DELETE (bukan TRUNCATE): dicatat per baris di binary log sehingga disaring benar oleh slave,
+        # apa pun database bawaan koneksinya. Staging tidak ikut direplikasi.
+        cur.execute(f"DELETE FROM {DB_STAGING}.{tabel}")
+        cur.executemany(f"INSERT INTO {DB_STAGING}.{tabel} ({kolom}, extracted_at) VALUES ({isian})", rows)
+    return tabel, len(rows)
+
+
 def main(rid=None):
     rid = rid or run_id()
     conn = koneksi(DB_STAGING)
     waktu = sekarang()
     try:
-        for dataset, (tabel, fungsi, kolom) in TABEL.items():
-            rows = [r + (waktu,) for r in fungsi()]
-            isian = ", ".join(["%s"] * (kolom.count(",") + 2))
-            with conn.cursor() as cur:
-                cur.execute(f"TRUNCATE TABLE {tabel}")
-                cur.executemany(f"INSERT INTO {tabel} ({kolom}, extracted_at) VALUES ({isian})", rows)
-            catat_etl(conn, rid, "extract", dataset, len(rows), len(rows), 0, "OK",
-                      f"{len(rows)} baris teks mentah -> {DB_STAGING}.{tabel}")
-            print(f"[extract] {dataset}: {len(rows)} baris -> {tabel}")
+        for dataset in TABEL:
+            tabel, n = muat_staging(conn, dataset, waktu)
+            catat_etl(conn, rid, "extract", dataset, n, n, 0, "OK", f"{n} baris teks mentah -> {DB_STAGING}.{tabel}")
+            print(f"[extract] {dataset}: {n} baris -> {tabel}")
         conn.commit()
     finally:
         conn.close()

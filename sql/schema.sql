@@ -183,13 +183,14 @@ CREATE TABLE replication_log (
     waktu            DATETIME NOT NULL
 );
 
--- Catatan sinkronisasi file sumber D4 -> master
+-- Catatan sinkronisasi file sumber (D1-D5) -> master, satu baris per data per putaran
 CREATE TABLE sync_log (
     id            BIGINT AUTO_INCREMENT PRIMARY KEY,
     dataset       VARCHAR(10) NOT NULL,
     baris_dicek   INT NOT NULL,
     baris_baru    INT NOT NULL,
     baris_berubah INT NOT NULL,
+    baris_dihapus INT NOT NULL DEFAULT 0,
     baris_sama    INT NOT NULL,
     detail        TEXT,
     waktu         DATETIME NOT NULL

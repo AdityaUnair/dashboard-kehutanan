@@ -13,6 +13,7 @@
     $barisFakta = $rep->filter(fn ($r) => str_starts_with($r->tabel, 'fakta_'))->sum('baris_master');
     $slave = $integrasi['slave'];
     $sync = $integrasi['sync'];
+    $syncDiubah = $sync->sum(fn ($s) => $s->baris_baru + $s->baris_berubah + $s->baris_dihapus);
     // simpul alur: [ikon, judul, keterangan, angka]
     $simpul = [
         'sumber' => ['ringkasan', 'File sumber', '5 data · XLS, XLSX, CSV, JSON', F::angka($dibaca).' baris dibaca'],
@@ -42,8 +43,8 @@
                     <span class="rounded-full bg-brand px-2.5 py-0.5 text-[11px] font-semibold text-white">Synchronization</span>
                     <span class="text-lg leading-none text-brand-teks xl:hidden">↑</span>
                     <div class="w-full rounded-xl border border-dashed border-brand/40 bg-surface-2 p-2.5 text-center">
-                        <div class="text-[12.5px] font-semibold text-ink">File D4 terbaru (JSON)</div>
-                        <div class="text-[11px] text-ink-3">bila BPS memperbarui angka</div>
+                        <div class="text-[12.5px] font-semibold text-ink">File sumber terbaru (D1–D5)</div>
+                        <div class="text-[11px] text-ink-3">bila penerbit memperbarui angka</div>
                     </div>
                 </div>
             @endif
@@ -72,8 +73,8 @@
             $rep->isNotEmpty() && $repOk === $rep->count(),
             $repOk.' dari '.$rep->count().' tabel identik'.($slave ? ' · tertinggal '.($slave['tertinggal'] ?? '–').' detik' : '')],
         ['Synchronization', 'Menjaga data tetap sama dengan sumbernya: hanya bagian yang berubah yang diperbarui, satu arah.',
-            'File D4 terbaru dibandingkan dengan Master baris per baris; baris yang beda saja yang ditulis ulang.',
-            (bool) $sync, $sync ? F::angka($sync->baris_dicek).' baris dicek · '.($sync->baris_baru + $sync->baris_berubah).' diperbarui' : 'Belum pernah dijalankan'],
+            'File sumber terbaru kelima data dibandingkan dengan Master baris per baris; hanya baris yang baru, berubah, atau hilang yang diterapkan.',
+            $sync->isNotEmpty(), $sync->isNotEmpty() ? $sync->count().' data · '.F::angka($sync->sum('baris_dicek')).' baris dicek · '.$syncDiubah.' diterapkan' : 'Belum pernah dijalankan'],
     ] as [$teknik, $apa, $diSini, $ok, $bukti])
         <div class="kartu flex flex-col">
             <div class="flex items-center gap-2"><span class="rounded-full bg-brand px-2.5 py-0.5 text-[11.5px] font-semibold text-white">{{ $teknik }}</span></div>
@@ -103,23 +104,33 @@
             </table>
         </div>
 
-        <div class="kartu">
-            <div class="kartu-judul">Sinkronisasi file sumber → master (D4)</div>
-            @if ($sync = $integrasi['sync'])
-                <div class="kartu-ket">Terakhir: {{ $sync->waktu }} · satu arah (file JSON BPS terbaru → database master), hanya baris yang berubah yang diperbarui</div>
-                <div class="grid gap-3 sm:grid-cols-3">
-                    @foreach ([['Baris dicek', $sync->baris_dicek], ['Baru / berubah', $sync->baris_baru.' / '.$sync->baris_berubah], ['Sama (tidak disentuh)', $sync->baris_sama]] as [$label, $nilai])
-                        <div class="rounded-xl border border-garis bg-surface-2 px-3 py-2.5">
-                            <div class="text-xs text-ink-3">{{ $label }}</div>
-                            <div class="mt-1 text-2xl font-bold">{{ $nilai }}</div>
-                        </div>
+        <div class="kartu overflow-x-auto">
+            <div class="kartu-judul">Sinkronisasi file sumber → master</div>
+            @if ($sync->isNotEmpty())
+                <div class="kartu-ket">Terakhir: {{ $sync->first()->waktu }} · satu arah (file terbaru → master); yang sama tidak disentuh</div>
+                <table class="tabel-data">
+                    <thead><tr><th>Data</th><th class="angka">Dicek</th><th class="angka">Baru</th><th class="angka">Berubah</th><th class="angka">Dihapus</th><th class="angka">Sama</th></tr></thead>
+                    <tbody>
+                    @foreach ($sync as $s)
+                        <tr>
+                            <td class="font-semibold text-ink">{{ $s->dataset }}</td>
+                            <td class="angka">{{ $s->baris_dicek }}</td>
+                            <td class="angka">{{ $s->baris_baru }}</td>
+                            <td class="angka">{{ $s->baris_berubah }}</td>
+                            <td class="angka">{{ $s->baris_dihapus }}</td>
+                            <td class="angka">{{ $s->baris_sama }}</td>
+                        </tr>
                     @endforeach
-                </div>
-                @foreach (json_decode($sync->detail ?? '[]', true) as $d)
-                    <div class="mt-2 text-xs text-ink-3">Provinsi {{ $d['kode_bps'] }} tahun {{ $d['tahun'] }}: {{ F::angka($d['lama'], 2) }} → {{ F::angka($d['baru'], 2) }} m³</div>
+                    </tbody>
+                </table>
+                @foreach ($sync as $s)
+                    @foreach (json_decode($s->detail ?? '[]', true) as $d)
+                        <div class="mt-2 text-xs text-ink-3"><b class="text-ink-2">{{ $s->dataset }}</b> · {{ $d['jenis'] ?? 'berubah' }} · {{ $d['baris'] ?? '' }}
+                            @if (($d['jenis'] ?? '') === 'berubah') ({{ $d['kolom'] }}: {{ F::angka($d['lama'], 2) }} → {{ F::angka($d['baru'], 2) }}) @endif</div>
+                    @endforeach
                 @endforeach
             @else
-                <div class="kartu-ket">Belum pernah dijalankan. Jalankan <code>python etl/sync_d4.py</code>.</div>
+                <div class="kartu-ket">Belum pernah dijalankan. Jalankan <code>python etl/sync.py</code>.</div>
             @endif
         </div>
     </div>

@@ -25,7 +25,7 @@ Link sumber dan catatan tiap file: [`data/raw/SUMBER_DATA.md`](data/raw/SUMBER_D
        CSV, JSON) ─────────────────► kehutanan_staging ──────► kehutanan_master ──────► replika ──► Laravel (web/)
                                      (teks mentah)              (bersih, kode BPS)       (slave / kehutanan_dashboard)
                                                                       ▲
-                 file sumber D4 (JSON) ── SYNCHRONIZATION (one-way, upsert hanya baris berubah)
+         file sumber terbaru (D1–D5) ── SYNCHRONIZATION (one-way, hanya selisih yang diterapkan)
 ```
 
 | Teknik Data-level EAI | File | Bukti di dashboard |
@@ -33,7 +33,7 @@ Link sumber dan catatan tiap file: [`data/raw/SUMBER_DATA.md`](data/raw/SUMBER_D
 | Extract | `etl/extract.py` | Log ETL tahap `extract` |
 | Transformation | `etl/transform_load.py` (aturan T1–T9), `etl/angka.py`, `etl/provinsi.py` | Log ETL tahap `transform-load` + cek total |
 | Replication | Master-Slave MariaDB asli (`scripts/replika.sh`, opsional) atau simulasi `etl/replicate.py` (inkremental + checksum) | Kartu "Replikasi master → replika" (mode aktif, status slave, checksum) |
-| Synchronization | `etl/sync_d4.py` (file sumber D4 → master, one-way) | Kartu "Sinkronisasi file sumber → master" |
+| Synchronization | `etl/sync.py` (file sumber terbaru D1–D5 → master, one-way, hanya selisih) | Kartu "Synchronization" + tabel sinkronisasi per data |
 
 ## Menjalankan
 
@@ -82,7 +82,7 @@ Tanpa langkah ini proyek tetap berjalan dengan **mode script**: `etl/replicate.p
 | Server | MariaDB XAMPP, port 3306 | MariaDB kedua, port 3307 (data di `~/.kehutanan-replika`) |
 | Database | `kehutanan_master` (ditulis ETL & sinkronisasi) | salinan identik `kehutanan_master` (dibaca website, `read_only`) |
 | Peran | mencatat setiap perubahan di *binary log* (`binlog_format=ROW`) | membaca binary log master dan menjalankan perubahan yang sama, terus-menerus |
-| Disalin | – | hanya `kehutanan_master` (`replicate-do-db`); staging dan tabel login/sesi Laravel tidak ikut |
+| Disalin | – | hanya tabel `kehutanan_master` (`replicate-wild-do-table`); staging dan tabel login/sesi Laravel tidak ikut |
 
 ```bash
 scripts/replika.sh setup     # sekali (macOS/Linux); menampilkan perintah sudo bila binary log XAMPP belum aktif,
@@ -97,16 +97,19 @@ slave. Website membaca data dari slave (`DATA_DB_PORT=3307`, `DATA_DB_DATABASE=k
 script); tabel login/sesi Laravel tetap di server utama karena slave hanya boleh dibaca. Bila slave mati, dashboard otomatis memakai replika cadangan dan menandainya di
 bagian Integrasi. Setelah menjalankan ulang `sql/schema.sql`, jalankan lagi `scripts/replika.sh setup`.
 
-### Demo sinkronisasi untuk presentasi
+### Sinkronisasi (dan demonya untuk presentasi)
 
 ```bash
 cd etl
-../.venv/bin/python sync_d4.py --simulasi
+../.venv/bin/python sync.py                  # sinkronkan D1–D5 dengan file sumber terbaru
+../.venv/bin/python sync.py --simulasi D2    # demo; ganti D2 dengan D1–D5
 ```
 
-Script mengubah produksi kayu Riau 2025 di master menjadi 0, menunggu Enter, lalu membandingkan master dengan file sumber D4
-dan mengembalikan nilai yang benar (hanya baris yang berbeda yang diperbarui). Refresh dashboard sebelum dan sesudah Enter untuk melihat perubahannya. Pada mode Master-Slave perubahan di master
-langsung tersalin ke slave tanpa menjalankan script replikasi.
+Beda dengan ETL penuh (`run_etl.py`), sinkronisasi hanya menerapkan **selisih**: file sumber terbaru dibaca dengan aturan
+transformasi yang sama, dibandingkan dengan master per primary key, lalu baris baru disisipkan, baris berubah diperbarui,
+dan baris yang tidak ada lagi di sumber dihapus. Hasilnya dicatat per data di `sync_log`. Mode `--simulasi` mengubah satu
+nilai di master menjadi 0, menunggu Enter, lalu sinkronisasi mengembalikannya. Refresh dashboard sebelum dan sesudah Enter.
+Pada mode Master-Slave perubahan di master langsung tersalin ke slave tanpa menjalankan script replikasi.
 
 ## Struktur folder
 

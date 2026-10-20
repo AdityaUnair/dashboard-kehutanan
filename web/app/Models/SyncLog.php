@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-/** Catatan sinkronisasi file sumber D4 -> master. */
+/** Catatan sinkronisasi file sumber (D1-D5) -> master. */
 class SyncLog extends Model
 {
     protected $connection = 'data';

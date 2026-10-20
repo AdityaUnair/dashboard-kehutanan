@@ -431,7 +431,8 @@ class DashboardService
             'replikasi' => $replikasi,
             'slave' => $this->statusSlave(),
             'cadangan' => (bool) config('app.replika_cadangan', false),
-            'sync' => SyncLog::orderByDesc('id')->first(),
+            // putaran sinkronisasi terakhir: satu baris per data (D1-D5), dicatat dengan waktu yang sama
+            'sync' => SyncLog::where('waktu', SyncLog::max('waktu'))->orderBy('dataset')->get(),
         ];
     }
 
