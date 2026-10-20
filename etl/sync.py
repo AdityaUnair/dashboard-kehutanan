@@ -4,7 +4,7 @@ Sumber kebenaran tiap data adalah filenya di data/raw. Bila penerbit memperbarui
 SiPongi menambah data bulan baru), file baru cukup diunduh ulang ke folder yang sama lalu script ini dijalankan.
 
 Beda dengan ETL penuh (run_etl.py) yang memproses semuanya dari awal, sinkronisasi hanya menerapkan SELISIH:
-  1. file sumber terbaru dibaca dengan aturan transformasi yang sama (T1-T9),
+  1. file sumber terbaru dibaca dengan aturan transformasi yang sama (T1-T8),
   2. hasilnya dibandingkan dengan isi master baris per baris (per primary key),
   3. baris baru disisipkan, baris yang nilainya berubah diperbarui, baris yang sudah tidak ada di sumber dihapus;
      baris yang sama tidak disentuh,

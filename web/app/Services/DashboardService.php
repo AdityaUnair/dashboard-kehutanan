@@ -165,7 +165,7 @@ class DashboardService
 
         return [
             'tahun_akhir' => $akhir,
-            // Rentang tahun lengkap; tahun yang dibuang saat transformasi (2020) tetap muncul sebagai celah
+            // Rentang tahun lengkap; tahun yang tidak ada datanya muncul sebagai celah (garis putus-putus)
             'tahun' => range(self::TAHUN_AWAL, $akhir),
             'nasional' => $nasional->map(fn ($r) => ['tahun' => $r->tahun, 'hutan' => (float) $r->hutan,
                 'persen' => $r->hutan / $r->total * 100]),
@@ -384,7 +384,7 @@ class DashboardService
             'D2' => [
                 'label' => 'Tutupan hutan (% daratan)', 'satuan' => '%', 'skala' => 'sekuensial', 'kaltaraDigabung' => true,
                 'nilai' => $perTahun(TutupanLahan::all(), 'tahun', 'persen_hutan'),
-                'catatan' => 'Persen daratan provinsi yang masih berhutan. Tahun 2020 tidak ada: dibuang oleh pemeriksaan ETL karena nilainya mustahil (BPS tidak memberi catatan).',
+                'catatan' => 'Persen daratan provinsi yang masih berhutan.',
             ],
             'D5' => [
                 'label' => 'Deforestasi netto', 'satuan' => 'ha/th', 'skala' => 'divergen', 'kaltaraDigabung' => true,

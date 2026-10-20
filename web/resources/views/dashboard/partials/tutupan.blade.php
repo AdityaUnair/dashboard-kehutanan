@@ -6,7 +6,7 @@
 @endphp
 
 <x-grafik id="chartTutupanTren" jangkar="tutupan" kode="D2" ikon="daun" judul="Tutupan hutan nasional, 2018–{{ $tutupan['tahun_akhir'] }}"
-          ket="BPS/KLHK · CSV · ha · putus-putus = 2020 dibuang ETL">
+          ket="BPS/KLHK · CSV · ha">
     <x-slot:ringkas>
         Naik dari {{ F::ringkas($awal['hutan']) }} ha ({{ F::persen($awal['persen']) }} daratan) menjadi {{ F::ringkas($akhir['hutan']) }} ha
         ({{ F::persen($akhir['persen']) }}), tapi D1 menunjukkan yang bertambah hutan sekunder dan tanaman, bukan hutan primer.

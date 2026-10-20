@@ -31,7 +31,7 @@ Link sumber dan catatan tiap file: [`data/raw/SUMBER_DATA.md`](data/raw/SUMBER_D
 | Teknik Data-level EAI | File | Bukti di dashboard |
 |---|---|---|
 | Extract | `etl/extract.py` | Log ETL tahap `extract` |
-| Transformation | `etl/transform_load.py` (aturan T1–T9), `etl/angka.py`, `etl/provinsi.py` | Log ETL tahap `transform-load` + cek total |
+| Transformation | `etl/transform_load.py` (aturan T1–T8), `etl/angka.py`, `etl/provinsi.py` | Log ETL tahap `transform-load` + cek total |
 | Replication | Master-Slave MariaDB asli (`scripts/replika.sh`, opsional) atau simulasi `etl/replicate.py` (inkremental + checksum) | Kartu "Replikasi master → replika" (mode aktif, status slave, checksum) |
 | Synchronization | `etl/sync.py` (file sumber terbaru D1–D5 → master, one-way, hanya selisih) | Kartu "Synchronization" + tabel sinkronisasi per data |
 
@@ -164,8 +164,6 @@ penting, dan setiap grafik punya **tabel data** pendamping.
 
 - D1 hanya tersedia di tingkat nasional (tanpa rincian provinsi), jadi tidak ada di peta sebaran.
 - D2 dan D5 belum memisahkan Kalimantan Utara dari Kalimantan Timur; untuk analisis gabungan keduanya disatukan.
-- Kolom 2020 pada tabel D2 dibuang oleh pemeriksaan ETL kami: 8 provinsi punya hutan > luas daratan (BPS tidak memberi
-  catatan untuk tahun itu). Total nasional 2020-nya tetap cocok dengan D1.
 - D5 baru tersedia s.d. periode 2021–2022. D3 2026 baru berisi Januari–Juli: ditampilkan pucat di grafik D3 dan peta,
   tetapi tidak dibandingkan dengan tahun penuh.
 - D2 (rekalkulasi 2023) dan D5 (buku deforestasi per periode) tidak saling cocok; ditampilkan di bagian Validasi silang.

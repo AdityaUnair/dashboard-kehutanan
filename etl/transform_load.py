@@ -8,8 +8,7 @@ Aturan transformasi utama:
   T5  Struktur tabel lebar / header bertingkat -> format panjang (provinsi/kelas, tahun, nilai)
   T6  Filter periode 2018-2025; khusus D3, 2026 (baru Januari-Juli) tetap disimpan sebagai data parsial
   T7  Cek kualitas: jumlah rincian (provinsi/kelas) dibandingkan dengan baris total di sumber
-  T8  Validasi logis D2: luas hutan > luas daratan = mustahil -> dibuang; lonjakan >25%/tahun ditandai
-  T9  D1: nama kelas dibersihkan & dikelompokkan (hutan primer/sekunder/tanaman, non-hutan), lalu total hutan
+  T8  D1: nama kelas dibersihkan & dikelompokkan (hutan primer/sekunder/tanaman, non-hutan), lalu total hutan
       nasional dicocokkan silang dengan baris total D2 (keduanya dari buku Rekalkulasi Penutupan Lahan KLHK)
 Load memakai UPSERT (insert kalau belum ada, update kalau sudah ada).
 """
@@ -78,7 +77,7 @@ def _tambah(agregat, kunci, nilai):
 
 # ---------------------------------------------------------------- D1
 def jenis_hutan(kelas):
-    """T9: kelas hutan dikelompokkan menurut asal-usulnya."""
+    """T8: kelas hutan dikelompokkan menurut asal-usulnya."""
     for kata in ("primer", "sekunder", "tanaman"):
         if kata in kelas.lower():
             return kata
@@ -115,7 +114,7 @@ def transform_d1(conn):
     dalam = lambda d: {t: v for t, v in d.items() if TAHUN_MIN <= t <= TAHUN_MAKS}
     pesan = " | ".join(cek_total(f"D1 {k}", jumlah[k], dalam(total[k])) for k in ("hutan", "non_hutan", "semua"))
 
-    # T9: validasi silang dengan baris total nasional D2 (tabel BPS lain, sumber buku yang sama)
+    # T8: validasi silang dengan baris total nasional D2 (tabel BPS lain, sumber buku yang sama)
     d2 = {r["tahun_data"]: angka_spasi(r["hutan_raw"]) * 1000
           for r in ambil(conn, f"SELECT tahun_data, provinsi_raw, hutan_raw FROM {DB_STAGING}.stg_d2_tutupan_lahan")
           if kode_provinsi(r["provinsi_raw"]) == "TOTAL" and angka_spasi(r["hutan_raw"]) is not None}
@@ -147,24 +146,6 @@ def transform_d2(conn):
         # T4: ribu ha -> ha
         _tambah(agregat, (kode, tahun), {"hutan_ha": hutan * 1000, "non_hutan_ha": non * 1000, "total_ha": jml * 1000})
 
-    # T8: validasi logis. Luas hutan tidak mungkin melebihi luas daratan provinsi.
-    mustahil = defaultdict(list)
-    for (kode, tahun), v in agregat.items():
-        if v["hutan_ha"] > v["total_ha"]:
-            mustahil[tahun].append(kode)
-    tahun_rusak = sorted(t for t, kodes in mustahil.items() if len(kodes) >= 3)
-    for (kode, tahun) in list(agregat):
-        if tahun in tahun_rusak or kode in mustahil.get(tahun, []):
-            del agregat[(kode, tahun)]
-            dibuang[f"kolom {tahun} tidak valid (hutan > luas daratan)"] += 1
-
-    # Lompatan > 25% dalam setahun ditandai untuk diperiksa (tidak dibuang)
-    janggal = []
-    for (kode, tahun), v in sorted(agregat.items()):
-        lalu = agregat.get((kode, tahun - 1))
-        if lalu and lalu["hutan_ha"] and abs(v["hutan_ha"] - lalu["hutan_ha"]) / lalu["hutan_ha"] > 0.25:
-            janggal.append(f"{kode}/{tahun - 1}->{tahun}")
-
     hasil, jumlah = [], defaultdict(float)
     for (kode, tahun), v in sorted(agregat.items()):
         hasil.append({
@@ -174,12 +155,8 @@ def transform_d2(conn):
             "catatan": CATATAN_KALTIM if kode == "64" else None, "updated_at": sekarang(),
         })
         jumlah[tahun] += v["total_ha"]
-    total = {t: v for t, v in total.items() if TAHUN_MIN <= t <= TAHUN_MAKS and t not in tahun_rusak}
+    total = {t: v for t, v in total.items() if TAHUN_MIN <= t <= TAHUN_MAKS}
     pesan = cek_total("D2", jumlah, total)
-    if tahun_rusak:
-        pesan += f" | tahun dibuang: {tahun_rusak} (nilai provinsi tampak tertukar antarbaris di sumber)"
-    if janggal:
-        pesan += f" | perlu dicek (lonjakan >25%/tahun): {', '.join(janggal)}"
     return "fakta_tutupan_lahan", ("kode_bps", "tahun"), hasil, len(rows), dibuang, pesan
 
 

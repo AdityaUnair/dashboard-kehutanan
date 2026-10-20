@@ -65,7 +65,7 @@
 <div class="mt-3 grid gap-3 lg:grid-cols-3">
     @foreach ([
         ['Transformation', 'Merapikan data mentah dari lima sumber yang formatnya berbeda-beda menjadi satu bentuk yang seragam.',
-            'Angka, nama provinsi, satuan (ribu ha → ha), dan bentuk tabel diseragamkan; data yang mustahil dibuang (aturan T1–T9).',
+            'Angka, nama provinsi, satuan (ribu ha → ha), dan bentuk tabel diseragamkan, lalu jumlahnya dicocokkan dengan total di sumber (aturan T1–T8).',
             $tlOk, $tlOk ? 'Semua cek total cocok dengan sumber' : 'Ada cek total yang perlu diperiksa'],
         ['Replication', 'Menyalin database secara terus-menerus ke server lain, sehingga website membaca salinannya, bukan data aslinya.',
             $slave ? 'MariaDB menyalin otomatis setiap perubahan Master ke server slave lewat binary log (model Master-Slave).'

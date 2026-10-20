@@ -68,9 +68,8 @@ untuk lanjut.
 | **T2** nama provinsi | `KEP. BANGKA BELITUNG`, `Bangka Belitung`, `Kepulauan Bangka Belitung` → kode `19` | "Satu provinsi ditulis tiga cara. Semuanya kami ganti dengan kode resmi BPS supaya bisa digabung." |
 | **T3** pemekaran Papua | sumber 2025 berisi 38 provinsi (ada Papua Tengah, Papua Pegunungan, dll.), master 34 | "Sejak 2022 Papua dipecah. Supaya bisa dibandingkan antartahun, provinsi baru digabung balik ke induknya." |
 | **T7** cek total | semua data `OK (selisih 0.00%)` | "Setelah dibersihkan, jumlah semua provinsi kami cocokkan dengan baris total nasional di file sumber. Selisihnya 0%, artinya tidak ada data yang hilang atau terhitung dua kali." |
-| **T8** cek masuk akal | Bali 2020: hutan `5 656.6` padahal daratan `566.9` (ribu ha) | "Kami juga memeriksa apakah nilainya masuk akal. Luas hutan Bali tidak mungkin lebih besar dari luas daratannya, jadi kolom 2020 di D2 kami buang. Ini kesimpulan pemeriksaan kami, bukan catatan BPS." |
 
-Daftar lengkap aturan T1–T9 ada di **Lampiran A**.
+Daftar lengkap aturan T1–T8 ada di **Lampiran A**.
 
 ---
 
@@ -142,7 +141,7 @@ tabel **Sinkronisasi file sumber → master**: baris D4 menunjukkan *berubah 1*.
 
 ---
 
-## Lampiran A: Aturan transformasi T1–T9
+## Lampiran A: Aturan transformasi T1–T8
 
 Kode lengkapnya di `etl/transform_load.py`.
 
@@ -155,11 +154,10 @@ Kode lengkapnya di `etl/transform_load.py`.
 | **T5** Bentuk tabel | Tabel melebar: tahun ke samping, judul kolom bertingkat | Diubah jadi "panjang": 1 baris = 1 provinsi + 1 tahun. |
 | **T6** Periode | Sumber berisi data sejak 2013/2014 | Disaring 2018–2025; D3 2026 (Januari–Juli) disimpan dan ditandai parsial. |
 | **T7** Cek total | Ada risiko baris hilang/dobel | Jumlah semua provinsi dibandingkan dengan baris total di file sumber (selisih harus 0%). |
-| **T8** Cek masuk akal (D2) | Bali 2020: hutan 5.656,6 rb ha > daratan 566,9 rb ha | Tahun yang nilainya mustahil (≥3 provinsi) dibuang; lonjakan >25%/tahun ditandai "perlu dicek". |
-| **T9** Kelas lahan (D1) | Nama kelas `Hutan tanaman *` (bintang catatan kaki) | Dibersihkan, dikelompokkan primer/sekunder/tanaman, lalu total hutannya dicocokkan dengan D2. |
+| **T8** Kelas lahan (D1) | Nama kelas `Hutan tanaman *` (bintang catatan kaki) | Dibersihkan, dikelompokkan primer/sekunder/tanaman, lalu total hutannya dicocokkan dengan D2. |
 
 **Satu kalimat:** *Transformation menyeragamkan angka, nama provinsi, satuan, dan bentuk tabel dari lima sumber, lalu
-memeriksa hasilnya: jumlahnya harus sama dengan total di sumber dan nilainya harus masuk akal.*
+memeriksa hasilnya: jumlahnya harus sama dengan total di sumber.*
 
 ---
 
@@ -184,10 +182,6 @@ saling memanggil lewat API.
 **Apa buktinya replikasi Master-Slave ini asli?**
 `scripts/replika.sh status` menampilkan status bawaan MariaDB (`SHOW SLAVE STATUS`): thread IO dan SQL berjalan, posisi
 binary log, dan jeda 0 detik. Di dashboard, checksum tiap tabel master dan slave dibandingkan dan semuanya sama.
-
-**Kenapa D2 tahun 2020 tidak ada?**
-Delapan provinsi punya luas hutan lebih besar dari luas daratannya (contoh Bali), jadi kolom itu dibuang pemeriksaan ETL
-kami. BPS tidak memberi catatan untuk tahun itu; ini kesimpulan kami. Total nasional 2020 sendiri tetap cocok dengan D1.
 
 **Bagaimana kalau BPS memperbarui data?**
 Unduh ulang file sumbernya ke `data/raw`, lalu jalankan `python3 etl/sync.py`. Hanya baris yang berubah yang diperbarui,

@@ -44,8 +44,4 @@ Q @"
 SELECT dataset, status, LEFT(SUBSTRING_INDEX(pesan, 'Cek total', -1), 110) AS hasil_cek_total FROM kehutanan_master.etl_log
 WHERE tahap='transform-load' AND dataset<>'REF' AND run_id=(SELECT MAX(run_id) FROM kehutanan_master.etl_log) ORDER BY dataset;
 "@
-Lanjut
-
-Judul 'T8: cek masuk akal (D2 2020)' 'Bali 2020: luas hutan lebih besar dari luas daratannya. Mustahil, jadi kolom 2020 D2 dibuang.'
-Q "SELECT provinsi_raw, tahun_data, hutan_raw AS hutan_ribu_ha, jumlah_raw AS daratan_ribu_ha FROM kehutanan_staging.stg_d2_tutupan_lahan WHERE provinsi_raw='Bali' AND tahun_data IN (2019, 2020);"
-Write-Host "`nSelesai. Aturan lengkap T1-T9: docs\NASKAH_DEMO.md (Lampiran A)."
+Write-Host "`nSelesai. Aturan lengkap T1-T8: docs\NASKAH_DEMO.md (Lampiran A)."
