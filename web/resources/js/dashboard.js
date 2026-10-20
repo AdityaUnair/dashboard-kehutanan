@@ -200,6 +200,22 @@ Chart.register(
 const DEF = {};
 
 // ---- ringkasan: sparkline
+// kanvas sparkline terlalu pendek untuk tooltip bawaan Chart.js (terpotong), jadi tooltip digambar sebagai elemen melayang
+const tooltipSpark = Object.assign(document.createElement('div'), {
+    className: 'pointer-events-none fixed z-50 hidden rounded-lg px-2.5 py-1.5 text-xs text-white shadow-xl',
+});
+document.body.append(tooltipSpark);
+window.addEventListener('scroll', () => tooltipSpark.classList.add('hidden'), { passive: true });
+function tooltipLuar({ chart, tooltip }) {
+    if (!tooltip.opacity) { tooltipSpark.classList.add('hidden'); return; }
+    const kotak = chart.canvas.getBoundingClientRect();
+    tooltipSpark.style.background = W.tooltip;
+    tooltipSpark.innerHTML = `<div class="font-semibold">${tooltip.title.join(' ')}</div><div class="opacity-80">${tooltip.body.flatMap((b) => b.lines).join(' ')}</div>`;
+    tooltipSpark.classList.remove('hidden');
+    const lebar = tooltipSpark.offsetWidth;
+    const x = Math.min(Math.max(8, kotak.left + tooltip.caretX - lebar / 2), window.innerWidth - lebar - 8);
+    Object.assign(tooltipSpark.style, { left: `${x}px`, top: `${kotak.top + tooltip.caretY - tooltipSpark.offsetHeight - 10}px` });
+}
 const SPARK = { tutupan: 'tutupan', deforestasi: 'deforestasi', karhutla: 'karhutla', kayu: 'kayu', kawasan: null };
 Object.keys(SPARK).forEach((k) => {
     DEF[`spark-${k}`] = () => {
@@ -212,7 +228,7 @@ Object.keys(SPARK).forEach((k) => {
                 animation: false,
                 layout: { padding: 2 },
                 scales: { x: { display: false }, y: { display: false, ...skalaPas(Object.values(deret)) } },
-                plugins: { legend: { display: false }, tooltip: { displayColors: false, callbacks: { title: (i) => namaTahun(i[0].label), label: (c) => ringkas(c.parsed.y) } } },
+                plugins: { legend: { display: false }, tooltip: { enabled: false, external: tooltipLuar, callbacks: { title: (i) => namaTahun(i[0].label), label: (c) => ringkas(c.parsed.y) } } },
                 interaction: { mode: 'index', intersect: false },
             },
         };

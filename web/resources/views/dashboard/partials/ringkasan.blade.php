@@ -8,7 +8,7 @@
         ['deforestasi', 'kapak', 'Deforestasi netto '.str_replace('-', '–', $kpi['deforestasi']['periode']), F::ringkas($kpi['deforestasi']['nilai']), 'ha/th',
             null, [$kpi['deforestasi']['perubahan'], 'vs 2018–2019', false], 'D5', 'bg-[#c58a14]/12 text-[#9a6a0c]'],
         ['karhutla', 'api', 'Kebakaran hutan & lahan '.$kpi['karhutla']['tahun'], F::ringkas($kpi['karhutla']['nilai']), 'ha',
-            $kpi['karhutla']['tahun_penuh'].' (setahun penuh): '.F::ringkas($kpi['karhutla']['nilai_penuh']).' · puncak '.$kpi['karhutla']['puncak_tahun'].': '.F::ringkas($kpi['karhutla']['puncak']), null, 'D3', 'bg-peringatan-lembut text-peringatan'],
+            null, [$kpi['karhutla']['perubahan'], 'vs 2018', false], 'D3', 'bg-peringatan-lembut text-peringatan'],
         ['kayu', 'kayu', 'Produksi kayu bulat '.$kpi['kayu']['tahun'], F::ringkas($kpi['kayu']['nilai']), 'm³',
             null, [$kpi['kayu']['perubahan'], 'vs 2018', null], 'D4', 'bg-kayu-lembut text-kayu'],
         ['kawasan', 'perisai', 'Luas kawasan hutan '.$kpi['kawasan']['tahun'], F::ringkas($kpi['kawasan']['nilai']), 'ha',
@@ -67,7 +67,7 @@
                 @endif
                 {{ $catatan }}
             </div>
-            <div class="mt-2 h-9"><canvas id="spark-{{ $kunci }}" aria-hidden="true"></canvas></div>
+            <div class="mt-auto h-9 pt-2"><canvas id="spark-{{ $kunci }}" aria-hidden="true"></canvas></div>
         </div>
     @endforeach
 </div>

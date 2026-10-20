@@ -58,8 +58,9 @@ class DashboardService
         $tutupan = TutupanLahan::where('tahun', $tutupanTahun)->selectRaw('SUM(hutan_ha) h, SUM(total_ha) t')->first();
         $tutupanAwal = TutupanLahan::where('tahun', self::TAHUN_AWAL)->sum('hutan_ha');
 
-        $karhutlaSemua = Karhutla::selectRaw('tahun, SUM(luas_ha) luas')->groupBy('tahun')->orderBy('tahun')->pluck('luas', 'tahun');
-        $karhutla = $karhutlaSemua->except(self::KARHUTLA_PARSIAL); // tahun penuh saja
+        // kartu ringkasan hanya memakai tahun penuh; 2026 (parsial) tetap tampil di grafik D3
+        $karhutla = Karhutla::where('tahun', '<>', self::KARHUTLA_PARSIAL)
+            ->selectRaw('tahun, SUM(luas_ha) luas')->groupBy('tahun')->orderBy('tahun')->pluck('luas', 'tahun');
         $kayu = ProduksiKayu::selectRaw('tahun, SUM(produksi_m3) m3')->groupBy('tahun')->pluck('m3', 'tahun');
         $defor = Deforestasi::selectRaw('periode, SUM(total_ha) total')->groupBy('periode')->orderBy('periode')->pluck('total', 'periode');
 
@@ -71,7 +72,7 @@ class DashboardService
                 'kawasan' => $deret(KawasanHutan::selectRaw('tahun, SUM(total_ha) v')->groupBy('tahun')->orderBy('tahun')->pluck('v', 'tahun')),
                 'tutupan' => $deret(TutupanLahan::selectRaw('tahun, SUM(hutan_ha) v')->groupBy('tahun')->orderBy('tahun')->pluck('v', 'tahun')),
                 'deforestasi' => $deret($defor),
-                'karhutla' => $deret($karhutlaSemua),
+                'karhutla' => $deret($karhutla),
                 'kayu' => $deret($kayu),
             ],
             'kawasan' => ['tahun' => $kawasanTahun, 'nilai' => (float) KawasanHutan::where('tahun', $kawasanTahun)->sum('total_ha')],
@@ -80,10 +81,8 @@ class DashboardService
                 'perubahan' => $this->persen($tutupan->h, $tutupanAwal),
             ],
             'karhutla' => [
-                'tahun' => $karhutlaSemua->has(self::KARHUTLA_PARSIAL) ? self::LABEL_PARSIAL : $karhutla->keys()->last(),
-                'nilai' => (float) $karhutlaSemua->last(),
-                'tahun_penuh' => $karhutla->keys()->last(), 'nilai_penuh' => (float) $karhutla->last(),
-                'puncak_tahun' => $karhutla->sortDesc()->keys()->first(), 'puncak' => (float) $karhutla->max(),
+                'tahun' => $karhutla->keys()->last(), 'nilai' => (float) $karhutla->last(),
+                'perubahan' => $this->persen($karhutla->last(), $karhutla[self::TAHUN_AWAL] ?? null),
             ],
             'kayu' => [
                 'tahun' => $kayu->keys()->last(), 'nilai' => (float) $kayu->last(),
