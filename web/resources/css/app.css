@@ -158,6 +158,20 @@
     details.lihat-tabel summary {
         @apply inline-flex cursor-pointer items-center gap-1 font-medium select-none hover:text-ink-2;
     }
+    /* Lipatan bukti teknis di bagian Integrasi */
+    details.detail-teknis > summary {
+        @apply flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-garis bg-surface px-4 py-3 text-[13px] font-medium text-ink-2 select-none hover:text-ink;
+    }
+    details.detail-teknis > summary::-webkit-details-marker {
+        display: none;
+    }
+    details.detail-teknis > summary::after {
+        content: '+';
+        @apply text-base leading-none text-ink-3;
+    }
+    details.detail-teknis[open] > summary::after {
+        content: '−';
+    }
     details.lihat-tabel .isi {
         @apply mt-2 max-h-72 overflow-auto rounded-xl border border-garis;
     }

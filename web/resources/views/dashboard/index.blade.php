@@ -68,7 +68,8 @@
 
     <footer class="mt-16 flex flex-wrap items-center justify-between gap-2 border-t border-garis pt-5 text-xs text-ink-3">
         <span>Sumber: BPS (bps.go.id) · SIPONGI KEMENHUT · KLHK</span>
-        <span>Dibaca dari database <code class="text-ink-2">kehutanan_dashboard</code> (replika) hasil pipeline ETL</span>
+        @php $sumberData = config('database.connections.data'); @endphp
+        <span>Dibaca dari replika <code class="text-ink-2">{{ $sumberData['database'] }}</code> (port {{ $sumberData['port'] }}) hasil pipeline ETL</span>
     </footer>
 </main>
 @endsection
