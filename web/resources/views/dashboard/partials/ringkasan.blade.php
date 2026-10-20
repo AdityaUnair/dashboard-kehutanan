@@ -3,8 +3,8 @@
 @php
     // [kunci deret, ikon, label, nilai, satuan, keterangan, [perubahan, teks, naik-itu-baik?], kode, kelas warna ikon]
     $tiles = [
-        ['kawasan', 'perisai', 'Luas kawasan hutan '.$kpi['kawasan']['tahun'], F::ringkas($kpi['kawasan']['nilai']), 'ha',
-            'status hukum, nyaris tetap', null, 'D1', 'bg-brand-lembut text-brand-teks'],
+        ['primer', 'pohon', 'Hutan primer '.$kpi['primer']['tahun'], F::ringkas($kpi['primer']['nilai']), 'ha',
+            null, [$kpi['primer']['perubahan'], 'vs 2018', true], 'D1', 'bg-brand-lembut text-brand-teks'],
         ['tutupan', 'daun', 'Tutupan hutan '.$kpi['tutupan']['tahun'], F::ringkas($kpi['tutupan']['nilai']), 'ha',
             F::persen($kpi['tutupan']['persen']).' daratan', [$kpi['tutupan']['perubahan'], 'vs 2018', true], 'D2', 'bg-brand-lembut text-brand-teks'],
         ['karhutla', 'api', 'Kebakaran hutan & lahan '.$kpi['karhutla']['tahun'], F::ringkas($kpi['karhutla']['nilai']), 'ha',
@@ -15,6 +15,8 @@
             null, [$kpi['deforestasi']['perubahan'], 'vs 2018–2019', false], 'D5', 'bg-[#c58a14]/12 text-[#9a6a0c]'],
     ];
     $temuan = [
+        ['kelas-lahan', 'pohon', 'Hutan bertambah, hutan primer berkurang',
+            'Total hutan naik '.F::ringkas($kelas['hutan_akhir'] - $kelas['hutan_awal']).' ha ('.$kelas['awal'].'–'.$kelas['akhir'].'), tetapi hutan primer turun '.F::ringkas(abs($kelas['selisih']['primer'])).' ha. Yang bertambah hutan sekunder dan hutan tanaman.'],
         ['karhutla', 'api', 'Karhutla meledak di tahun El Niño',
             'Luas terbakar '.$karhutla['puncak'].' mencapai '.F::ringkas($karhutla['nasional'][$karhutla['puncak']]).' ha dan '.$karhutla['puncak_kedua'].' '.F::ringkas($karhutla['nasional'][$karhutla['puncak_kedua']]).' ha, beberapa kali lipat tahun lain.'],
         ['deforestasi', 'kapak', 'Laju deforestasi turun tajam sejak 2019',
@@ -25,7 +27,7 @@
             'Tutupan hutan (D2) naik '.F::ringkas($validasi['perubahan_tutupan']).' ha, padahal deforestasi netto (D5) menunjukkan hutan berkurang.'],
     ];
     $panelIndeks = [
-        ['Tutupan hutan (D2)', 'tutupan', 'daun'], ['Karhutla (D3)', 'karhutla', 'api'],
+        ['Hutan primer (D1)', 'primer', 'pohon'], ['Tutupan hutan (D2)', 'tutupan', 'daun'], ['Karhutla (D3)', 'karhutla', 'api'],
         ['Produksi kayu (D4)', 'kayu', 'kayu'], ['Deforestasi netto (D5)', 'deforestasi', 'kapak'],
     ];
 @endphp
@@ -41,7 +43,7 @@
             Hutan Indonesia: berapa yang tersisa, dan apa yang menggerusnya?
         </h1>
         <p class="mt-2 max-w-xl text-[14px] leading-relaxed text-[#eef3e6]/90">
-            Data BPS dan KLHK dalam tiga format (XLSX, CSV, JSON) diekstrak, diseragamkan, lalu dimuat ke satu database.
+            Data BPS dan KLHK dalam empat format file (XLS, XLSX, CSV, JSON) diekstrak, diseragamkan, lalu dimuat ke satu database.
         </p>
     </div>
 </div>
@@ -80,9 +82,10 @@
         </div>
         <div class="kartu-ket mt-2">Satuan tiap data berbeda, jadi semuanya diubah ke indeks (nilai tahun itu ÷ nilai 2018 × 100). Tiap panel memakai skala sendiri (lihat angka sumbu);
             garis tipis = 100 (sama dengan 2018), garis putus-putus = data tidak tersedia.</div>
+        {{-- 5 panel dalam 2 kolom; panel terakhir selebar kartu agar tidak ada ruang kosong --}}
         <div class="grid gap-3 sm:grid-cols-2">
             @foreach ($panelIndeks as [$judul, $kunci, $ikon])
-                <div class="rounded-xl border border-garis bg-surface-2 p-3">
+                <div @class(['rounded-xl border border-garis bg-surface-2 p-3', 'sm:col-span-2' => $loop->last])>
                     <div class="flex items-center gap-1.5 text-[12.5px] font-medium text-ink-2"><x-ikon :nama="$ikon" class="size-3.5" /> {{ $judul }}</div>
                     <div class="mt-1 h-28"><canvas id="indeks-{{ $kunci }}" aria-label="Indeks {{ $judul }}"></canvas></div>
                 </div>

@@ -4,11 +4,13 @@ Aturan transformasi utama:
   T1  Format angka diseragamkan (gaya Indonesia, Inggris, spasi) -> float           (angka.py)
   T2  Nama provinsi beragam -> kode BPS 2 digit; baris total nasional dipisahkan      (provinsi.py)
   T3  Provinsi hasil pemekaran Papua 2022 digabung ke induknya -> standar 34 provinsi
-  T4  Satuan diseragamkan ke hektar (D1 2018-2019 & D2 tertulis ribu ha)
-  T5  Struktur tabel lebar / header bertingkat -> format panjang (provinsi, tahun, nilai)
-  T6  Filter periode 2018-2025; data 2026 (belum setahun) dibuang
-  T7  Cek kualitas: jumlah provinsi dibandingkan dengan baris total nasional di sumber
+  T4  Satuan diseragamkan ke hektar (D1 & D2 tertulis ribu ha)
+  T5  Struktur tabel lebar / header bertingkat -> format panjang (provinsi/kelas, tahun, nilai)
+  T6  Filter periode 2018-2025; khusus D3, 2026 (baru Januari-Juli) tetap disimpan sebagai data parsial
+  T7  Cek kualitas: jumlah rincian (provinsi/kelas) dibandingkan dengan baris total di sumber
   T8  Validasi logis D2: luas hutan > luas daratan = mustahil -> dibuang; lonjakan >25%/tahun ditandai
+  T9  D1: nama kelas dibersihkan & dikelompokkan (hutan primer/sekunder/tanaman, non-hutan), lalu total hutan
+      nasional dicocokkan silang dengan baris total D2 (keduanya dari buku Rekalkulasi Penutupan Lahan KLHK)
 Load memakai UPSERT (insert kalau belum ada, update kalau sudah ada).
 """
 import re
@@ -75,42 +77,51 @@ def _tambah(agregat, kunci, nilai):
 
 
 # ---------------------------------------------------------------- D1
-def transform_d1(conn):
-    rows = ambil(conn, f"SELECT * FROM {DB_STAGING}.stg_d1_kawasan_hutan")
-    total_per_tahun = {r["tahun_data"]: angka_polos(r["jumlah_raw"]) for r in rows
-                       if kode_provinsi(r["provinsi_raw"]) == "TOTAL"}
-    # T4: tabel lama berlabel "Ribu Ha" dan isinya memang ribuan; mulai 2020 isinya sudah hektar
-    skala = {t: (1000 if tot < 1_000_000 else 1) for t, tot in total_per_tahun.items()}
+def jenis_hutan(kelas):
+    """T9: kelas hutan dikelompokkan menurut asal-usulnya."""
+    for kata in ("primer", "sekunder", "tanaman"):
+        if kata in kelas.lower():
+            return kata
+    return None
 
-    hasil, dibuang, jumlah = [], defaultdict(int), defaultdict(float)
+
+def transform_d1(conn):
+    rows = ambil(conn, f"SELECT * FROM {DB_STAGING}.stg_d1_tutupan_kelas")
+    hasil, dibuang = [], defaultdict(int)
+    jumlah = defaultdict(lambda: defaultdict(float))  # tahun -> {hutan, non_hutan, semua}
+    total = defaultdict(dict)                          # baris jumlah di sumber: tahun -> {hutan, non_hutan, semua}
     for r in rows:
-        tahun, kode = r["tahun_data"], kode_provinsi(r["provinsi_raw"])
-        if kode == "TOTAL":
-            continue
-        if kode is None:
-            dibuang["nama tidak dikenal"] += 1
+        tahun, nama = r["tahun_data"], re.sub(r"\s*\*$", "", r["kelas_raw"]).strip()  # "Hutan tanaman *" -> "Hutan tanaman"
+        # T4: tabel tertulis ribu ha
+        kawasan, apl, tot = (None if v is None else round(v * 1000, 2)
+                             for v in (angka_polos(r[k]) for k in ("kawasan_raw", "apl_raw", "total_raw")))
+        if not r["no_raw"]:  # T7: baris "Jumlah Hutan", "Jumlah Non Hutan", "Total" dipisah untuk cek total
+            kunci = {"jumlah hutan": "hutan", "jumlah non hutan": "non_hutan", "total": "semua"}.get(nama.lower())
+            if kunci:
+                total[kunci][tahun] = tot
             continue
         if not (TAHUN_MIN <= tahun <= TAHUN_MAKS):
             dibuang["di luar periode"] += 1
             continue
-        nilai = [angka_polos(r[k]) for k in ("hutan_lindung_raw", "konservasi_raw", "hpt_raw",
-                                             "hp_raw", "hpk_raw", "jumlah_raw")]
-        if all(v is None for v in nilai):
-            dibuang["'...' (data masih digabung ke provinsi induk)"] += 1
-            continue
-        s = skala[tahun]
-        hl, ks, hpt, hp, hpk, jml = [None if v is None else v * s for v in nilai]
-        sk = r["tahun_sk_raw"]
+        kelompok = "hutan" if "non" not in (r["kelompok_raw"] or "").lower() else "non_hutan"
         hasil.append({
-            "kode_bps": kode, "tahun": tahun, "hutan_lindung_ha": hl, "konservasi_ha": ks,
-            "produksi_terbatas_ha": hpt, "produksi_tetap_ha": hp, "produksi_konversi_ha": hpk,
-            "total_ha": jml, "tahun_sk": int(sk) if sk and sk.isdigit() else None,
-            "catatan": CATATAN_KALTIM if kode == "64" else None, "updated_at": sekarang(),
+            "kode_kelas": int(float(r["no_raw"])), "tahun": tahun, "kelas": nama, "kelompok": kelompok,
+            "jenis_hutan": jenis_hutan(nama) if kelompok == "hutan" else None,
+            "kawasan_ha": kawasan, "apl_ha": apl, "total_ha": tot, "updated_at": sekarang(),
         })
-        jumlah[tahun] += jml or 0
-    total = {t: v * skala[t] for t, v in total_per_tahun.items() if TAHUN_MIN <= t <= TAHUN_MAKS}
-    pesan = cek_total("D1", jumlah, total) + f" | skala ribu->ha dipakai: {[t for t, s in skala.items() if s > 1]}"
-    return "fakta_kawasan_hutan", ("kode_bps", "tahun"), hasil, len(rows), dibuang, pesan
+        jumlah[kelompok][tahun] += tot or 0
+        jumlah["semua"][tahun] += tot or 0
+
+    dalam = lambda d: {t: v for t, v in d.items() if TAHUN_MIN <= t <= TAHUN_MAKS}
+    pesan = " | ".join(cek_total(f"D1 {k}", jumlah[k], dalam(total[k])) for k in ("hutan", "non_hutan", "semua"))
+
+    # T9: validasi silang dengan baris total nasional D2 (tabel BPS lain, sumber buku yang sama)
+    d2 = {r["tahun_data"]: angka_spasi(r["hutan_raw"]) * 1000
+          for r in ambil(conn, f"SELECT tahun_data, provinsi_raw, hutan_raw FROM {DB_STAGING}.stg_d2_tutupan_lahan")
+          if kode_provinsi(r["provinsi_raw"]) == "TOTAL" and angka_spasi(r["hutan_raw"]) is not None}
+    pesan += " | " + cek_total("silang D1 vs D2 (total hutan)", {t: d2[t] for t in jumlah["hutan"] if t in d2},
+                               {t: v for t, v in jumlah["hutan"].items() if t in d2})
+    return "fakta_tutupan_kelas", ("kode_kelas", "tahun"), hasil, len(rows), dibuang, pesan
 
 
 # ---------------------------------------------------------------- D2

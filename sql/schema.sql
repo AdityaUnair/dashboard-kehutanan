@@ -19,20 +19,18 @@ CREATE DATABASE IF NOT EXISTS kehutanan_dashboard CHARACTER SET utf8mb4 COLLATE 
 -- ---------------------------------------------------------------------
 USE kehutanan_staging;
 
-CREATE TABLE stg_d1_kawasan_hutan (
-    id                BIGINT AUTO_INCREMENT PRIMARY KEY,
-    sumber_file       VARCHAR(120) NOT NULL,
-    tahun_data        SMALLINT     NOT NULL,
-    baris_ke          SMALLINT     NOT NULL,
-    provinsi_raw      VARCHAR(120),
-    tahun_sk_raw      VARCHAR(20),
-    hutan_lindung_raw VARCHAR(40),
-    konservasi_raw    VARCHAR(40),
-    hpt_raw           VARCHAR(40),
-    hp_raw            VARCHAR(40),
-    hpk_raw           VARCHAR(40),
-    jumlah_raw        VARCHAR(40),
-    extracted_at      DATETIME     NOT NULL
+CREATE TABLE stg_d1_tutupan_kelas (
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    sumber_file  VARCHAR(120) NOT NULL,
+    baris_ke     SMALLINT     NOT NULL,
+    kelompok_raw VARCHAR(40),
+    no_raw       VARCHAR(10),
+    kelas_raw    VARCHAR(120),
+    tahun_data   SMALLINT     NOT NULL,
+    kawasan_raw  VARCHAR(40),
+    apl_raw      VARCHAR(40),
+    total_raw    VARCHAR(40),
+    extracted_at DATETIME     NOT NULL
 );
 
 CREATE TABLE stg_d2_tutupan_lahan (
@@ -96,19 +94,18 @@ CREATE TABLE ref_provinsi (
     updated_at DATETIME    NOT NULL
 );
 
-CREATE TABLE fakta_kawasan_hutan (
-    kode_bps             CHAR(2)  NOT NULL,
-    tahun                SMALLINT NOT NULL,
-    hutan_lindung_ha     DECIMAL(14,2),
-    konservasi_ha        DECIMAL(14,2),
-    produksi_terbatas_ha DECIMAL(14,2),
-    produksi_tetap_ha    DECIMAL(14,2),
-    produksi_konversi_ha DECIMAL(14,2),
-    total_ha             DECIMAL(14,2),
-    tahun_sk             SMALLINT,
-    catatan              VARCHAR(200),
-    updated_at           DATETIME NOT NULL,
-    PRIMARY KEY (kode_bps, tahun)
+-- D1 bersifat nasional (tanpa provinsi): satu baris = satu kelas penutupan lahan per tahun
+CREATE TABLE fakta_tutupan_kelas (
+    kode_kelas  TINYINT     NOT NULL,  -- nomor kelas di tabel BPS (1-21)
+    tahun       SMALLINT    NOT NULL,
+    kelas       VARCHAR(60) NOT NULL,
+    kelompok    VARCHAR(10) NOT NULL,  -- hutan / non_hutan
+    jenis_hutan VARCHAR(10),           -- primer / sekunder / tanaman (khusus kelas hutan)
+    kawasan_ha  DECIMAL(14,2),         -- di dalam kawasan hutan
+    apl_ha      DECIMAL(14,2),         -- di luar kawasan (Areal Penggunaan Lain)
+    total_ha    DECIMAL(14,2),
+    updated_at  DATETIME    NOT NULL,
+    PRIMARY KEY (kode_kelas, tahun)
 );
 
 CREATE TABLE fakta_tutupan_lahan (
@@ -181,11 +178,11 @@ CREATE TABLE sync_log (
 -- ---------------------------------------------------------------------
 USE kehutanan_dashboard;
 
-DROP TABLE IF EXISTS ref_provinsi, fakta_kawasan_hutan, fakta_tutupan_lahan, fakta_karhutla,
+DROP TABLE IF EXISTS ref_provinsi, fakta_kawasan_hutan, fakta_tutupan_kelas, fakta_tutupan_lahan, fakta_karhutla,
                      fakta_produksi_kayu, fakta_deforestasi, etl_log, sync_log, replication_log;
 
 CREATE TABLE ref_provinsi        LIKE kehutanan_master.ref_provinsi;
-CREATE TABLE fakta_kawasan_hutan LIKE kehutanan_master.fakta_kawasan_hutan;
+CREATE TABLE fakta_tutupan_kelas LIKE kehutanan_master.fakta_tutupan_kelas;
 CREATE TABLE fakta_tutupan_lahan LIKE kehutanan_master.fakta_tutupan_lahan;
 CREATE TABLE fakta_karhutla      LIKE kehutanan_master.fakta_karhutla;
 CREATE TABLE fakta_produksi_kayu LIKE kehutanan_master.fakta_produksi_kayu;

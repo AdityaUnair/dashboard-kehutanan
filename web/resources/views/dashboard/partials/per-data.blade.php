@@ -4,7 +4,7 @@
 {{-- Urutan D1 → D5.
      Dua kolom = satu baris per data. items-start: kartu tidak ikut memanjang saat tabel kartu sebelahnya dibuka. --}}
 <div class="grid items-start gap-3 md:grid-cols-2">
-    @include('dashboard.partials.kawasan')
+    @include('dashboard.partials.kelas-lahan')
     @include('dashboard.partials.tutupan')
     @include('dashboard.partials.karhutla')
     @include('dashboard.partials.kayu')

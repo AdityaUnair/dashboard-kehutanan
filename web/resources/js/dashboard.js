@@ -41,8 +41,8 @@ const TEMA = {
     },
 };
 let W = TEMA.terang;
-const warnaData = () => ({ tutupan: W.hijau, karhutla: W.api, kayu: W.kayu, deforestasi: W.amber });
-const RAMP_PETA = { D1: 'hijau', D2: 'hijau', D3: 'api', D4: 'kayu' };
+const warnaData = () => ({ primer: W.ordinal[2], tutupan: W.hijau, karhutla: W.api, kayu: W.kayu, deforestasi: W.amber });
+const RAMP_PETA = { D2: 'hijau', D3: 'api', D4: 'kayu' };
 
 // ================================================================== format angka Indonesia
 const fmt = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
@@ -102,7 +102,7 @@ const tandaiParsial = (labels, warna) => {
 };
 const transparan = (warna, a = 0.14) => warna + Math.round(a * 255).toString(16).padStart(2, '0');
 // Skala Y mengikuti data, tapi rentangnya minimal `persen` dari nilai tengah: perubahan nyata terlihat,
-// perubahan yang sangat kecil (mis. kawasan −0,2%) tetap tampak hampir datar.
+// perubahan yang sangat kecil (di bawah ±3%) tetap tampak hampir datar.
 const skalaPas = (nilai, persen = 0.06) => {
     const v = nilai.filter((x) => x !== null && x !== undefined);
     const lo = Math.min(...v);
@@ -216,7 +216,7 @@ function tooltipLuar({ chart, tooltip }) {
     const x = Math.min(Math.max(8, kotak.left + tooltip.caretX - lebar / 2), window.innerWidth - lebar - 8);
     Object.assign(tooltipSpark.style, { left: `${x}px`, top: `${kotak.top + tooltip.caretY - tooltipSpark.offsetHeight - 10}px` });
 }
-const SPARK = { tutupan: 'tutupan', deforestasi: 'deforestasi', karhutla: 'karhutla', kayu: 'kayu', kawasan: null };
+const SPARK = { primer: 'primer', tutupan: 'tutupan', deforestasi: 'deforestasi', karhutla: 'karhutla', kayu: 'kayu' };
 Object.keys(SPARK).forEach((k) => {
     DEF[`spark-${k}`] = () => {
         const deret = D.deret[k];
@@ -235,8 +235,8 @@ Object.keys(SPARK).forEach((k) => {
     };
 });
 
-// ---- ringkasan: indeks gabungan sebagai 4 panel kecil, masing-masing dengan skala sendiri (rentang minimal 20 poin)
-const INDEKS = { tutupan: 'Tutupan hutan (D2)', karhutla: 'Karhutla (D3)', kayu: 'Produksi kayu (D4)', deforestasi: 'Deforestasi netto (D5)' };
+// ---- ringkasan: indeks gabungan sebagai 5 panel kecil, masing-masing dengan skala sendiri (rentang minimal 20 poin)
+const INDEKS = { primer: 'Hutan primer (D1)', tutupan: 'Tutupan hutan (D2)', karhutla: 'Karhutla (D3)', kayu: 'Produksi kayu (D4)', deforestasi: 'Deforestasi netto (D5)' };
 Object.entries(INDEKS).forEach(([k, label]) => {
     DEF[`indeks-${k}`] = () => {
         const warna = warnaData()[k];
@@ -272,41 +272,45 @@ document.querySelector('[data-tabel-indeks]').addEventListener('toggle', (e) => 
     e.target.querySelector('.isi').innerHTML = `<table class="tabel-data"><thead><tr><th>Tahun</th>${kepala}</tr></thead><tbody>${baris.join('')}</tbody></table>`;
 });
 
-// ---- D1 kawasan
-DEF.chartKawasanProvinsi = () => {
-    // kartu ringkas: 10 provinsi terluas (data sudah terurut dari yang terluas); semua provinsi ada di peta sebaran
-    const pr = D.kawasan.provinsi.slice(0, 10);
+// ---- D1 tutupan menurut kelas (nasional)
+DEF.chartKelasTren = () => {
+    const k = D.kelas;
+    const warna = [W.ordinal[2], W.ordinal[0], W.kayu]; // primer, sekunder, tanaman
     return {
-        type: 'bar',
-        data: {
-            labels: pr.map((p) => p.nama),
-            datasets: [
-                { label: 'Lindung', data: pr.map((p) => p.lindung), backgroundColor: W.ordinal[1], ...gayaTumpuk() },
-                { label: 'Konservasi', data: pr.map((p) => p.konservasi), backgroundColor: W.ordinal[2], ...gayaTumpuk() },
-                { label: 'Produksi', data: pr.map((p) => p.produksi), backgroundColor: W.ordinal[0], ...gayaTumpuk(), borderRadius: { topRight: 5, bottomRight: 5 } },
-            ],
-        },
+        type: 'line',
+        data: { labels: k.tahun, datasets: k.kumulatif.map((j, i) => ({ label: j.label, data: j.data, borderColor: warna[i], pointBackgroundColor: warna[i], tension: 0 })) },
         options: {
-            indexAxis: 'y',
-            scales: { x: { stacked: true, ...sumbuRingkas() }, y: { stacked: true, ...tanpaKisi, ticks: { autoSkip: false, font: { size: 10.5 } } } },
-            plugins: { legend: { labels: { boxWidth: 10, boxHeight: 10, padding: 10 } }, tooltip: { mode: 'index', callbacks: { label: labelTooltip('ha') } } },
+            layout: { padding: { right: 128, top: 8 } },
+            scales: { y: { ...sumbuRingkas(), ticks: { ...sumbuRingkas().ticks, callback: (v) => (v > 0 ? '+' : '') + ringkas(v) } }, x: tanpaKisi },
+            plugins: {
+                legend: { display: false },
+                tooltip: { mode: 'index', intersect: false, callbacks: { label: (c) => ` ${c.dataset.label}: ${c.parsed.y > 0 ? '+' : ''}${ringkas(c.parsed.y)} ha` } },
+                garisAcuan: { nilai: 0 },
+                labelUjungGaris: { aktif: true, teks: (d, v) => `${d.label.replace('Hutan ', '')} ${v > 0 ? '+' : ''}${ringkas(v)}` },
+            },
         },
     };
 };
-DEF.chartKawasanFungsi = () => {
-    const fungsi = Object.entries(D.kawasan.fungsi).sort((a, b) => b[1] - a[1]);
-    const total = fungsi.reduce((s, [, v]) => s + v, 0);
+DEF.chartKelasPerubahan = () => {
+    const pr = D.kelas.perubahan;
+    const warna = (p) => (p.kelompok === 'hutan' ? W.hijau : W.kayu);
     return {
         type: 'bar',
-        data: { labels: fungsi.map(([k]) => k), datasets: [{ label: 'Luas (ha)', data: fungsi.map(([, v]) => v), backgroundColor: W.hijau, ...gayaBatang }] },
+        data: { labels: pr.map((p) => p.kelas), datasets: [{ label: 'Perubahan (ha)', data: pr.map((p) => p.selisih), backgroundColor: pr.map(warna), ...gayaBatang, borderSkipped: false }] },
         options: {
             indexAxis: 'y',
-            layout: { padding: { right: 112 } },
-            scales: { x: { display: false }, y: tanpaKisi },
+            layout: { padding: { left: 4, right: 52 } },
+            scales: { x: { ...sumbuRingkas(), grace: '12%' }, y: { ...tanpaKisi, ticks: { autoSkip: false, font: { size: 10.5 } } } },
             plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: labelTooltip('ha') } },
-                labelUjungBatang: { aktif: true, format: (v) => `${ringkas(v)} · ${fmt.format((v / total) * 100)}%` },
+                legend: {
+                    labels: {
+                        generateLabels: () => [['Kelas hutan', W.hijau], ['Kelas non-hutan', W.kayu]].map(([text, w]) => ({ text, fillStyle: w, strokeStyle: w, fontColor: W.tinta2, pointStyle: 'rectRounded' })),
+                    },
+                    onClick: () => {},
+                },
+                tooltip: { callbacks: { label: (c) => ` ${c.parsed.x > 0 ? '+' : ''}${fmt.format(c.parsed.x)} ha` } },
+                garisAcuan: { nilai: 0 },
+                labelUjungBatang: { aktif: true, format: (v) => (v > 0 ? '+' : '') + ringkas(v) },
             },
         },
     };
@@ -423,22 +427,27 @@ DEF.chartKarhutlaProvinsi = peringkatProvinsi(D.karhutla, () => warnaData().karh
 DEF.chartKayuTren = trenNasional(D.kayu, () => warnaData().kayu, 'm³');
 DEF.chartKayuProvinsi = peringkatProvinsi(D.kayu, () => warnaData().kayu, 'm³', 'pilihTahunKayu');
 
-// ---- G2 kawasan vs tutupan
-DEF.chartKawasanVsTutupan = () => {
-    const kt = D.kawasanVsTutupan;
+// ---- G2 dari mana kenaikan tutupan hutan (D1 + D2 + D5)
+DEF.chartNeracaHutan = () => {
+    const kp = D.neraca.komponen;
+    const terkecil = Math.min(0, ...kp.map((k) => k.nilai));
     return {
         type: 'bar',
         data: {
-            labels: kt.provinsi.map((p) => p.nama),
-            datasets: [
-                { label: 'Kawasan hutan (D1)', data: kt.provinsi.map((p) => p.kawasan), backgroundColor: W.redup, ...gayaBatang },
-                { label: 'Tutupan hutan (D2)', data: kt.provinsi.map((p) => p.hutan), backgroundColor: warnaData().tutupan, ...gayaBatang },
-            ],
+            labels: kp.map((k) => `${k.label} · ${k.kode}`),
+            datasets: [{ label: 'Perubahan (ha)', data: kp.map((k) => k.nilai), backgroundColor: kp.map((k) => (k.nilai < 0 ? W.turun : W.naik)), ...gayaBatang, maxBarThickness: 34, borderSkipped: false }],
         },
         options: {
             indexAxis: 'y',
-            scales: { x: sumbuRingkas(), y: { ...tanpaKisi, ticks: { autoSkip: false } } },
-            plugins: { tooltip: { mode: 'index', callbacks: { label: labelTooltip('ha') } } },
+            layout: { padding: { right: 56 } },
+            // ruang ekstra di kiri agar label batang negatif tidak menabrak nama kategori
+            scales: { x: { ...sumbuRingkas(), grace: '10%', min: terkecil * 1.6, ticks: { ...sumbuRingkas().ticks, callback: (v) => (v > 0 ? '+' : '') + ringkas(v) } }, y: { ...tanpaKisi, ticks: { autoSkip: false } } },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (c) => ` ${c.parsed.x > 0 ? '+' : ''}${fmt.format(c.parsed.x)} ha` } },
+                garisAcuan: { nilai: 0 },
+                labelUjungBatang: { aktif: true, format: (v) => (v > 0 ? '+' : '') + ringkas(v) },
+            },
         },
     };
 };

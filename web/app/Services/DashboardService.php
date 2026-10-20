@@ -5,11 +5,11 @@ namespace App\Services;
 use App\Models\Deforestasi;
 use App\Models\EtlLog;
 use App\Models\Karhutla;
-use App\Models\KawasanHutan;
 use App\Models\ProduksiKayu;
 use App\Models\Provinsi;
 use App\Models\ReplicationLog;
 use App\Models\SyncLog;
+use App\Models\TutupanKelas;
 use App\Models\TutupanLahan;
 use Illuminate\Support\Collection;
 
@@ -38,7 +38,7 @@ class DashboardService
         return $this->provinsi()[$kode]->nama ?? $kode;
     }
 
-    /** Kalimantan Utara digabung ke Kalimantan Timur agar setara dengan D1, D2, D5 (lihat catatan sumber di data/raw/SUMBER_DATA.md). */
+    /** Kalimantan Utara digabung ke Kalimantan Timur agar setara dengan D2 dan D5 (lihat catatan sumber di data/raw/SUMBER_DATA.md). */
     private function kodeGabungan(string $kode): string
     {
         return $kode === '65' ? '64' : $kode;
@@ -53,7 +53,7 @@ class DashboardService
 
     public function kpi(): array
     {
-        $kawasanTahun = KawasanHutan::max('tahun');
+        $primer = $this->deretJenis('primer');
         $tutupanTahun = TutupanLahan::max('tahun');
         $tutupan = TutupanLahan::where('tahun', $tutupanTahun)->selectRaw('SUM(hutan_ha) h, SUM(total_ha) t')->first();
         $tutupanAwal = TutupanLahan::where('tahun', self::TAHUN_AWAL)->sum('hutan_ha');
@@ -69,13 +69,16 @@ class DashboardService
         return [
             // deret nasional per tahun untuk sparkline di kartu ringkasan
             'deret' => [
-                'kawasan' => $deret(KawasanHutan::selectRaw('tahun, SUM(total_ha) v')->groupBy('tahun')->orderBy('tahun')->pluck('v', 'tahun')),
+                'primer' => $deret($primer),
                 'tutupan' => $deret(TutupanLahan::selectRaw('tahun, SUM(hutan_ha) v')->groupBy('tahun')->orderBy('tahun')->pluck('v', 'tahun')),
                 'deforestasi' => $deret($defor),
                 'karhutla' => $deret($karhutla),
                 'kayu' => $deret($kayu),
             ],
-            'kawasan' => ['tahun' => $kawasanTahun, 'nilai' => (float) KawasanHutan::where('tahun', $kawasanTahun)->sum('total_ha')],
+            'primer' => [
+                'tahun' => $primer->keys()->last(), 'nilai' => (float) $primer->last(),
+                'perubahan' => $this->persen($primer->last(), $primer[self::TAHUN_AWAL] ?? null),
+            ],
             'tutupan' => [
                 'tahun' => $tutupanTahun, 'nilai' => (float) $tutupan->h, 'persen' => $tutupan->h / $tutupan->t * 100,
                 'perubahan' => $this->persen($tutupan->h, $tutupanAwal),
@@ -97,38 +100,50 @@ class DashboardService
 
     // ------------------------------------------------------------------ D1
 
-    public function kawasanHutan(): array
+    /** Luas nasional per tahun untuk satu jenis hutan (primer / sekunder / tanaman). */
+    private function deretJenis(string $jenis): Collection
     {
-        $tahun = KawasanHutan::max('tahun');
-        $rows = KawasanHutan::where('tahun', $tahun)->orderByDesc('total_ha')->get();
-        $total = $rows->sum('total_ha');
+        return TutupanKelas::where('jenis_hutan', $jenis)->selectRaw('tahun, SUM(total_ha) v')
+            ->groupBy('tahun')->orderBy('tahun')->pluck('v', 'tahun')->map(fn ($v) => (float) $v);
+    }
 
-        $fungsi = [
-            'Hutan Lindung' => $rows->sum('hutan_lindung_ha'),
-            'Konservasi (KSA/KPA)' => $rows->sum('konservasi_ha'),
-            'Produksi Terbatas' => $rows->sum('produksi_terbatas_ha'),
-            'Produksi Tetap' => $rows->sum('produksi_tetap_ha'),
-            'Produksi Konversi' => $rows->sum('produksi_konversi_ha'),
-        ];
-        $top3 = $rows->take(3);
-        $nasional = KawasanHutan::selectRaw('tahun, SUM(total_ha) total')->groupBy('tahun')->orderBy('tahun')->pluck('total', 'tahun');
+    public function tutupanKelas(): array
+    {
+        $tahun = TutupanKelas::distinct()->orderBy('tahun')->pluck('tahun');
+        [$awal, $akhir] = [$tahun->first(), $tahun->last()];
+
+        $jenis = collect(['primer' => 'Hutan primer', 'sekunder' => 'Hutan sekunder', 'tanaman' => 'Hutan tanaman'])
+            ->map(fn ($label, $k) => ['label' => $label, 'nilai' => $this->deretJenis($k)]);
+        // perubahan kumulatif terhadap tahun awal: semua garis mulai dari 0 agar arah perubahannya langsung terbaca
+        $kumulatif = $jenis->map(fn ($j) => ['label' => $j['label'],
+            'data' => $tahun->map(fn ($t) => $j['nilai'][$t] - $j['nilai'][$awal])->values()]);
+
+        $baris = TutupanKelas::whereIn('tahun', [$awal, $akhir])->get()->groupBy('kode_kelas');
+        $perKelas = $baris->map(function ($g) use ($awal, $akhir) {
+            $a = $g->firstWhere('tahun', $awal);
+            $b = $g->firstWhere('tahun', $akhir);
+
+            return ['kelas' => $b->kelas, 'kelompok' => $b->kelompok, 'awal' => (float) $a->total_ha, 'akhir' => (float) $b->total_ha,
+                'selisih' => (float) ($b->total_ha - $a->total_ha)];
+        })->values();
+
+        $hutan = fn ($t) => (float) TutupanKelas::where('kelompok', 'hutan')->where('tahun', $t)->sum('total_ha');
+        $perkebunan = $perKelas->firstWhere('kelas', 'Perkebunan');
+        $kawasanAkhir = TutupanKelas::where('tahun', $akhir)->selectRaw("SUM(kawasan_ha) semua, SUM(CASE WHEN kelompok = 'hutan' THEN kawasan_ha END) hutan")->first();
+        $p = $jenis['primer']['nilai'];
 
         return [
-            'tahun' => $tahun,
-            'awal' => ['tahun' => $nasional->keys()->first(), 'total' => (float) $nasional->first()],
-            'akhir' => ['tahun' => $nasional->keys()->last(), 'total' => (float) $nasional->last()],
-            'provinsi' => $rows->map(fn ($r) => [
-                'nama' => $this->nama($r->kode_bps),
-                'lindung' => (float) $r->hutan_lindung_ha,
-                'konservasi' => (float) $r->konservasi_ha,
-                'produksi' => (float) ($r->produksi_terbatas_ha + $r->produksi_tetap_ha + $r->produksi_konversi_ha),
-            ])->values(),
-            'fungsi' => $fungsi,
-            'nasional' => $nasional,
-            'top3' => $top3->map(fn ($r) => $this->nama($r->kode_bps))->values(),
-            'top3_persen' => $top3->sum('total_ha') / $total * 100,
-            'papua_persen' => $rows->whereIn('kode_bps', ['91', '94'])->sum('total_ha') / $total * 100,
-            'produksi_persen' => ($fungsi['Produksi Terbatas'] + $fungsi['Produksi Tetap'] + $fungsi['Produksi Konversi']) / $total * 100,
+            'tahun' => $tahun, 'awal' => $awal, 'akhir' => $akhir,
+            'kumulatif' => $kumulatif->values(),
+            'luas' => $jenis->map(fn ($j) => $j['nilai']->values()),
+            // 10 perubahan terbesar (naik atau turun), diurutkan dari kenaikan terbesar
+            'perubahan' => $perKelas->sortByDesc(fn ($k) => abs($k['selisih']))->take(10)->sortByDesc('selisih')->values(),
+            'hutan_awal' => $hutan($awal), 'hutan_akhir' => $hutan($akhir),
+            'selisih' => $jenis->map(fn ($j) => $j['nilai'][$akhir] - $j['nilai'][$awal]),
+            'primer_awal' => $p[$awal], 'primer_akhir' => $p[$akhir],
+            'primer_sebelum_akhir' => $p[$akhir - 1] ?? null,
+            'perkebunan' => $perkebunan,
+            'hutan_dalam_kawasan_persen' => $kawasanAkhir->hutan / $kawasanAkhir->semua * 100,
         ];
     }
 
@@ -239,6 +254,7 @@ class DashboardService
     public function indeksGabungan(): array
     {
         $deret = [
+            'Hutan primer (D1)' => $this->deretJenis('primer'),
             'Tutupan hutan (D2)' => TutupanLahan::selectRaw('tahun, SUM(hutan_ha) v')->groupBy('tahun')->pluck('v', 'tahun'),
             'Karhutla (D3)' => Karhutla::selectRaw('tahun, SUM(luas_ha) v')->groupBy('tahun')->pluck('v', 'tahun'),
             'Produksi kayu (D4)' => ProduksiKayu::selectRaw('tahun, SUM(produksi_m3) v')->groupBy('tahun')->pluck('v', 'tahun'),
@@ -255,27 +271,23 @@ class DashboardService
         return ['tahun' => $tahun, 'deret' => $hasil, 'label_tahun' => [self::KARHUTLA_PARSIAL => self::LABEL_PARSIAL]];
     }
 
-    /** G2: luas kawasan hutan (status hukum) vs tutupan hutan sebenarnya (citra satelit), tahun yang sama. */
-    public function kawasanVsTutupan(): array
+    /** G2: dari mana perubahan tutupan hutan 2018-2022? Total (D2) dipecah per jenis hutan (D1), dibandingkan deforestasi netto (D5). */
+    public function neracaHutan(): array
     {
-        $tahun = min(KawasanHutan::max('tahun'), TutupanLahan::max('tahun'));
-        $kawasan = KawasanHutan::where('tahun', $tahun)->pluck('total_ha', 'kode_bps');
-        $hutan = TutupanLahan::where('tahun', $tahun)->pluck('hutan_ha', 'kode_bps');
-
-        $rows = $kawasan->map(fn ($k, $kode) => [
-            'nama' => $this->nama($kode),
-            'kawasan' => (float) $k,
-            'hutan' => (float) ($hutan[$kode] ?? 0),
-            'rasio' => $k ? ($hutan[$kode] ?? 0) / $k * 100 : null,
-        ])->sortByDesc('kawasan')->values();
-
-        $rendah = $rows->where('kawasan', '>', 500000)->sortBy('rasio')->take(5)->values();
+        [$awal, $akhir] = [self::TAHUN_AWAL, 2022];
+        $ubah = fn (Collection $d) => (float) ($d[$akhir] - $d[$awal]);
+        $d2 = TutupanLahan::whereIn('tahun', [$awal, $akhir])->selectRaw('tahun, SUM(hutan_ha) v')->groupBy('tahun')->pluck('v', 'tahun');
+        $defor = (float) Deforestasi::where('tahun_awal', '>=', $awal)->where('tahun_akhir', '<=', $akhir)->sum('total_ha');
 
         return [
-            'tahun' => $tahun,
-            'provinsi' => $rows->take(15)->values(),
-            'rasio_nasional' => $hutan->sum() / $kawasan->sum() * 100,
-            'rasio_rendah' => $rendah,
+            'periode' => "{$awal}–{$akhir}",
+            'komponen' => [
+                ['label' => 'Total tutupan hutan', 'kode' => 'D2', 'nilai' => $ubah($d2)],
+                ['label' => 'Hutan sekunder', 'kode' => 'D1', 'nilai' => $ubah($this->deretJenis('sekunder'))],
+                ['label' => 'Hutan tanaman', 'kode' => 'D1', 'nilai' => $ubah($this->deretJenis('tanaman'))],
+                ['label' => 'Hutan primer', 'kode' => 'D1', 'nilai' => $ubah($this->deretJenis('primer'))],
+                ['label' => 'Deforestasi netto (hutan hilang)', 'kode' => 'D5', 'nilai' => -$defor],
+            ],
         ];
     }
 
@@ -358,11 +370,6 @@ class DashboardService
                 'nilai' => $perTahun(TutupanLahan::all(), 'tahun', 'persen_hutan'),
                 'catatan' => 'Persen daratan provinsi yang masih berhutan. Tahun 2020 tidak ada: dibuang oleh pemeriksaan ETL karena nilainya mustahil (BPS tidak memberi catatan).',
             ],
-            'D1' => [
-                'label' => 'Luas kawasan hutan', 'satuan' => 'ha', 'skala' => 'sekuensial', 'kaltaraDigabung' => true,
-                'nilai' => $perTahun(KawasanHutan::all(), 'tahun', 'total_ha'),
-                'catatan' => 'Status hukum (SK Menteri), bukan kondisi lapangan.',
-            ],
             'D5' => [
                 'label' => 'Deforestasi netto', 'satuan' => 'ha/th', 'skala' => 'divergen', 'kaltaraDigabung' => true,
                 'nilai' => $perTahun(Deforestasi::all(), 'periode', 'total_ha'),
@@ -395,7 +402,7 @@ class DashboardService
 
         return [
             'sumber' => [
-                ['kode' => 'D1', 'nama' => 'Luas kawasan hutan', 'penerbit' => 'BPS', 'format' => 'XLSX', 'cara' => 'Unduh file (6 tahun)'],
+                ['kode' => 'D1', 'nama' => 'Tutupan lahan menurut kelas (nasional)', 'penerbit' => 'BPS / KLHK', 'format' => 'XLS', 'cara' => 'Unduh file'],
                 ['kode' => 'D2', 'nama' => 'Tutupan lahan hutan & non-hutan', 'penerbit' => 'BPS / KLHK', 'format' => 'CSV', 'cara' => 'Unduh file'],
                 ['kode' => 'D3', 'nama' => 'Luas kebakaran hutan & lahan', 'penerbit' => 'SiPongi KLHK', 'format' => 'XLSX', 'cara' => 'Unduh file'],
                 ['kode' => 'D5', 'nama' => 'Deforestasi netto', 'penerbit' => 'BPS / KLHK', 'format' => 'CSV', 'cara' => 'Unduh file'],

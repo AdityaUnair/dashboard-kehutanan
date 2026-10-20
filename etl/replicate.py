@@ -10,7 +10,7 @@ from config import DB_DASHBOARD, DB_MASTER, koneksi, sekarang
 
 TABEL = {
     "ref_provinsi": ("kode_bps",),
-    "fakta_kawasan_hutan": ("kode_bps", "tahun"),
+    "fakta_tutupan_kelas": ("kode_kelas", "tahun"),
     "fakta_tutupan_lahan": ("kode_bps", "tahun"),
     "fakta_karhutla": ("kode_bps", "tahun"),
     "fakta_produksi_kayu": ("kode_bps", "tahun"),

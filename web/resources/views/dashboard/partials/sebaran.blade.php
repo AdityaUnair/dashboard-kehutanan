@@ -28,7 +28,7 @@
 
         <div id="peta" class="mt-3 min-h-48" role="group" aria-label="Peta provinsi Indonesia"></div>
         <p class="mt-3 text-[11.5px] text-ink-3">Arahkan kursor ke provinsi untuk melihat angka; klik untuk melihat trennya di panel kanan.
-            Kaltara bergaris = angkanya digabung ke Kalimantan Timur: D1 dan D5 memang begitu dari sumbernya; D2 dari BPS baru dipisah sejak 2021, sehingga oleh ETL tetap digabung agar deret waktunya konsisten. Batas wilayah: BAKOSURTANAL/Dukcapil via peta-indonesia-geojson (MIT).</p>
+            Kaltara bergaris = angkanya digabung ke Kalimantan Timur: D5 memang begitu dari sumbernya; D2 dari BPS baru dipisah sejak 2021, sehingga oleh ETL tetap digabung agar deret waktunya konsisten. Batas wilayah: BAKOSURTANAL/Dukcapil via peta-indonesia-geojson (MIT).</p>
         <details class="lihat-tabel" data-tabel-peta>
             <summary>Lihat tabel data</summary>
             <div class="isi"></div>

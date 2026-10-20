@@ -16,11 +16,11 @@
                 Hutan Indonesia: berapa yang tersisa, dan apa yang menggerusnya?
             </h1>
             <p class="mt-4 max-w-md text-[15px] leading-relaxed text-pretty text-[#eef3e6]/90">
-                Data BPS dan KLHK dalam tiga format disatukan lewat pipeline ETL ke satu database, lalu dianalisis di sini.
+                Data BPS dan KLHK dalam empat format file disatukan lewat pipeline ETL ke satu database, lalu dianalisis di sini.
             </p>
         </div>
         <div class="relative grid max-w-lg grid-cols-5 gap-2 text-center">
-            @foreach ([['D1', 'Kawasan', 'XLSX', 'perisai'], ['D2', 'Tutupan', 'CSV', 'daun'], ['D3', 'Karhutla', 'XLSX', 'api'], ['D4', 'Kayu', 'JSON', 'kayu'], ['D5', 'Deforestasi', 'CSV', 'kapak']] as [$k, $n, $f, $i])
+            @foreach ([['D1', 'Kelas lahan', 'XLS', 'pohon'], ['D2', 'Tutupan', 'CSV', 'daun'], ['D3', 'Karhutla', 'XLSX', 'api'], ['D4', 'Kayu', 'JSON', 'kayu'], ['D5', 'Deforestasi', 'CSV', 'kapak']] as [$k, $n, $f, $i])
                 <div class="rounded-xl bg-[#1e3a28]/55 px-2 py-3 backdrop-blur-sm">
                     <x-ikon :nama="$i" class="mx-auto size-4 text-[#cfe6c9]" />
                     <div class="mt-1.5 text-[12px] font-medium">{{ $n }}</div>

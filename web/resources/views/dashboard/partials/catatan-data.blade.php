@@ -10,7 +10,10 @@
             Ini kesimpulan kami, bukan pernyataan BPS. Lonjakan Jawa Tengah dan Sumatera Selatan 2018 → 2019 ditandai "perlu dicek" di log ETL.</span></p>
         <p><b>Kaltara</b><span>Keterangan BPS di tabel D2: "Data provinsi Kalimantan Timur merupakan data gabungan antara Provinsi Kalimantan
             Timur dan Kalimantan Utara". Kaltara baru terisi mulai 2021; kami menggabungkannya ke Kaltim untuk semua tahun agar deret waktunya
-            konsisten. D1 dan D5 memang sudah gabungan dari sumbernya.</span></p>
+            konsisten. D5 memang sudah gabungan dari sumbernya.</span></p>
+        <p><b>D1 · nasional</b><span>Tabel kelas lahan dari BPS hanya tersedia untuk tingkat nasional, jadi D1 tidak punya rincian provinsi dan
+            tidak ada di peta. Total hutannya cocok dengan baris total nasional D2 di setiap tahun, termasuk 2020 (dicek otomatis oleh ETL); artinya
+            masalah D2 2020 ada di rincian provinsinya, bukan di total nasional.</span></p>
         <p><b>D3 · 2026</b><span>Data kebakaran 2026 baru Januari–Juli, jadi tidak dibandingkan langsung dengan tahun penuh.</span></p>
     </div>
 </div>

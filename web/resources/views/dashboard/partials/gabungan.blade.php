@@ -15,35 +15,41 @@
                sub="Hal-hal yang baru terlihat bila beberapa data disambungkan. Tren gabungan (indeks 2018 = 100) ada di Ringkasan." />
 
 <div class="grid items-start gap-3 xl:grid-cols-3">
-    {{-- G2: seharusnya vs kenyataan --}}
-    <x-grafik id="chartKawasanVsTutupan" jangkar="kawasan-vs-tutupan" kode="G2" ikon="lapisan" class="xl:col-span-2"
-              judul="Seharusnya vs kenyataan: kawasan hutan vs tutupan hutan" tinggi="h-[340px]"
-              ket="D1 + D2 · {{ $kawasanVsTutupan['tahun'] }} · ha · 15 provinsi dengan kawasan terluas · tutupan bisa di dalam maupun di luar kawasan" />
+    {{-- G2: dari mana kenaikan tutupan hutan --}}
+    @php [$g2Total, $g2Sekunder, $g2Tanaman, $g2Primer, $g2Defor] = array_column($neraca['komponen'], 'nilai'); @endphp
+    <x-grafik id="chartNeracaHutan" jangkar="neraca-hutan" kode="G2" ikon="lapisan" class="xl:col-span-2" tinggi="h-[300px]"
+              judul="Hutan bertambah dari mana? Perubahan {{ str_replace('–', ' → ', $neraca['periode']) }}"
+              ket="D1 + D2 + D5 · ha · nasional · {{ $neraca['periode'] }} (irisan ketiga data) · hijau = bertambah, merah karat = berkurang">
+        <x-slot:ringkas>
+            Kenaikan tutupan hutan {{ F::ringkas($g2Total) }} ha hampir seluruhnya berasal dari hutan sekunder dan hutan tanaman; hutan primer nyaris tetap
+            ({{ F::ringkas($g2Primer) }} ha), padahal D5 mencatat {{ F::ringkas(abs($g2Defor)) }} ha hutan hilang.
+        </x-slot:ringkas>
+    </x-grafik>
 
     <div class="kartu flex flex-col">
-        <div class="kartu-judul"><span class="mr-1 text-ink-3">G2</span>Rasio tutupan ÷ kawasan terendah</div>
-        <div class="kartu-ket">Provinsi dengan kawasan lebih dari 500 rb ha</div>
+        <div class="kartu-judul"><span class="mr-1 text-ink-3">G2</span>Rincian perubahan, {{ $neraca['periode'] }}</div>
+        <div class="kartu-ket">Angka asli dari database (ha)</div>
         <table class="tabel-data">
-            <thead><tr><th>Provinsi</th><th class="angka">Kawasan (ha)</th><th class="angka">Tutupan (ha)</th><th class="angka">Rasio</th></tr></thead>
+            <thead><tr><th>Komponen</th><th>Data</th><th class="angka">Perubahan (ha)</th></tr></thead>
             <tbody>
-            @foreach ($kawasanVsTutupan['rasio_rendah'] as $r)
+            @foreach ($neraca['komponen'] as $k)
                 <tr>
-                    <td class="text-ink">{{ $r['nama'] }}</td>
-                    <td class="angka">{{ F::angka($r['kawasan']) }}</td>
-                    <td class="angka">{{ F::angka($r['hutan']) }}</td>
-                    <td class="angka font-semibold text-ink">{{ F::persen($r['rasio'], 0) }}</td>
+                    <td class="text-ink">{{ $k['label'] }}</td>
+                    <td>{{ $k['kode'] }}</td>
+                    <td class="angka font-semibold text-ink">{{ $k['nilai'] > 0 ? '+' : '' }}{{ F::angka($k['nilai'], 1) }}</td>
                 </tr>
             @endforeach
             </tbody>
         </table>
         <x-insight class="mt-auto border-0 bg-surface-2">
             <x-slot:terlihat>
-                Secara nasional luas tutupan hutan hanya {{ F::persen($kawasanVsTutupan['rasio_nasional'], 0) }} dari luas kawasan hutan; di provinsi
-                pada tabel jauh lebih rendah.
+                Hutan sekunder (+{{ F::ringkas($g2Sekunder) }}) dan hutan tanaman (+{{ F::ringkas($g2Tanaman) }}) menyumbang hampir seluruh kenaikan total.
+                Hilangnya hutan menurut D5 tidak tampak sebagai turunnya hutan primer di D1.
             </x-slot:terlihat>
             <x-slot:kenapa>
-                Banyak kawasan hutan sudah berubah menjadi semak, kebun, atau lahan terbuka, tetapi statusnya belum diubah. Rasio rendah = tanda
-                kawasan yang sudah terdegradasi.
+                Deforestasi netto sudah dikurangi hutan yang tumbuh kembali, jadi seharusnya searah dengan perubahan total. Bahwa D2 dan D1 justru naik
+                memperkuat dugaan di G4: dua kelompok buku KLHK ini dihitung dengan cara berbeda. Ini kesimpulan kami dari penggabungan data, bukan
+                pernyataan BPS/KLHK.
             </x-slot:kenapa>
         </x-insight>
     </div>
@@ -125,7 +131,8 @@
                 <x-slot:kenapa>
                     Kemungkinan karena cara menghitungnya berbeda. Tabel D2 bersumber dari buku <em>Rekalkulasi Penutupan Lahan 2023</em> (semua
                     tahun dihitung ulang), sedangkan D5 dari buku-buku deforestasi per periode yang terbit lebih dulu. Perbedaan ini baru kelihatan
-                    setelah kedua data digabung; kalau dibaca terpisah, masing-masing tampak wajar.
+                    setelah kedua data digabung; kalau dibaca terpisah, masing-masing tampak wajar. G2 memperlihatkan dari mana kenaikan D2 berasal
+                (hutan sekunder dan hutan tanaman, menurut D1).
                 </x-slot:kenapa>
             </x-insight>
         </div>

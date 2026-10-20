@@ -15,7 +15,7 @@
     <div class="grid gap-3 xl:grid-cols-3">
         <div class="kartu overflow-x-auto xl:col-span-2">
             <div class="kartu-judul">Sumber data</div>
-            <div class="kartu-ket">Lima sumber, tiga format berbeda</div>
+            <div class="kartu-ket">Lima sumber, empat format file berbeda</div>
             <table class="tabel-data">
                 <thead><tr><th>Kode</th><th>Data</th><th>Penerbit</th><th>Format</th><th>Cara extract</th></tr></thead>
                 <tbody>

@@ -1,13 +1,14 @@
-"""EXTRACT: baca file mentah (XLSX, CSV, JSON) lalu simpan apa adanya (teks) ke kehutanan_staging.
+"""EXTRACT: baca file mentah (XLS, XLSX, CSV, JSON) lalu simpan apa adanya (teks) ke kehutanan_staging.
 
-Tidak ada pembersihan di sini. Struktur tabel sumber hanya "diratakan" (satu baris = satu provinsi
-per tahun) supaya bisa disimpan di tabel, tetapi nilai tetap teks asli.
+Tidak ada pembersihan di sini. Struktur tabel sumber hanya "diratakan" (satu baris = satu provinsi atau
+satu kelas lahan per tahun) supaya bisa disimpan di tabel, tetapi nilai tetap teks asli.
 """
 import csv
 import json
 import re
 
 import openpyxl
+import xlrd
 
 from config import DB_STAGING, RAW_DIR, catat_etl, koneksi, run_id, sekarang
 
@@ -17,34 +18,26 @@ def _teks(v):
 
 
 def extract_d1():
-    rows = []
-    for path in sorted((RAW_DIR / "xlsx").glob("D1_kawasan_hutan_*.xlsx")):
-        tahun = int(re.search(r"(\d{4})", path.stem).group(1))
-        ws = openpyxl.load_workbook(path, data_only=True).active
-        semua = list(ws.iter_rows(values_only=True))
-        header = [str(h or "").lower() for h in semua[0]]
-
-        def kolom(kata):
-            return next(i for i, h in enumerate(header) if kata in h)
-
-        idx = {
-            "sk": next((i for i, h in enumerate(header) if "tahun sk" in h), None),
-            "hl": kolom("lindung"),
-            "ks": kolom("suaka"),
-            "hpt": kolom("terbatas"),
-            "hp": kolom("tetap"),
-            "hpk": kolom("dikonversi"),
-            "jml": kolom("jumlah"),
-        }
-        for n, r in enumerate(semua[1:], start=2):
-            if not r[0] or str(r[0]).strip().lower().startswith(("keterangan", "<sup", "1", "2")):
-                continue
-            rows.append((
-                path.name, tahun, n, _teks(r[0]),
-                _teks(r[idx["sk"]]) if idx["sk"] is not None else None,
-                _teks(r[idx["hl"]]), _teks(r[idx["ks"]]), _teks(r[idx["hpt"]]),
-                _teks(r[idx["hp"]]), _teks(r[idx["hpk"]]), _teks(r[idx["jml"]]),
-            ))
+    """Tabel BPS 2084 (format .xls lama): baris = kelas penutupan lahan, kolom = tahun x (kawasan, APL, total)."""
+    path = RAW_DIR / "xls" / "D1_tutupan_kelas_2014_2023.xls"
+    ws = xlrd.open_workbook(path).sheet_by_index(0)
+    sel = lambda r, c: ws.cell_value(r, c)
+    # baris judul tahun: tiap tahun menempati 3 kolom (kawasan hutan, APL, total)
+    baris_tahun = next(r for r in range(ws.nrows) if str(sel(r, 0)).strip().lower().startswith("no"))
+    tahun_kolom = {c: int(sel(baris_tahun, c)) for c in range(ws.ncols) if isinstance(sel(baris_tahun, c), float)}
+    rows, kelompok = [], None
+    for r in range(baris_tahun + 2, ws.nrows):
+        no, nama = _teks(sel(r, 0)), _teks(sel(r, 1))
+        if not nama:
+            continue
+        if (no or "").lower().startswith(("keterangan", "(", "sumber")):
+            break
+        if re.match(r"^[AB]\.", nama):  # judul kelompok: "A. Hutan" / "B. Non Hutan"
+            kelompok = nama
+            continue
+        for c, tahun in tahun_kolom.items():
+            rows.append((path.name, r + 1, kelompok, no or None, nama, tahun,
+                         _teks(sel(r, c)), _teks(sel(r, c + 1)), _teks(sel(r, c + 2))))
     return rows
 
 
@@ -126,9 +119,8 @@ def extract_d5():
 
 
 TABEL = {
-    "D1": ("stg_d1_kawasan_hutan", extract_d1,
-           "sumber_file, tahun_data, baris_ke, provinsi_raw, tahun_sk_raw, hutan_lindung_raw, "
-           "konservasi_raw, hpt_raw, hp_raw, hpk_raw, jumlah_raw"),
+    "D1": ("stg_d1_tutupan_kelas", extract_d1,
+           "sumber_file, baris_ke, kelompok_raw, no_raw, kelas_raw, tahun_data, kawasan_raw, apl_raw, total_raw"),
     "D2": ("stg_d2_tutupan_lahan", extract_d2,
            "sumber_file, blok, baris_ke, provinsi_raw, tahun_data, hutan_raw, hutan_pct_raw, "
            "non_hutan_raw, non_hutan_pct_raw, jumlah_raw"),
