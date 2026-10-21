@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # =====================================================================
-# Replikasi MASTER-SLAVE asli (opsional, untuk demo). macOS / Linux.
+# Replikasi MASTER-SLAVE asli (opsional, untuk demo). macOS / Linux / server (VPS).
 #
-#   Master = MariaDB XAMPP (port 3306), database kehutanan_master.
+#   Master = MariaDB di port 3306 (XAMPP di laptop, atau MariaDB sistem di server), database kehutanan_master.
 #   Slave  = server MariaDB kedua (port 3307) yang datanya disimpan di ~/.kehutanan-replika (di luar repo).
 #            Slave membaca binary log master dan menyalin setiap perubahan kehutanan_master secara otomatis ke
 #            kehutanan_master miliknya sendiri (salinan identik, read_only). Website membaca salinan ini.
@@ -27,8 +27,22 @@ PORT_MASTER=3306
 PORT_SLAVE=3307
 REPL_USER=replika
 REPL_PASS="${REPLIKA_PASSWORD:-replika-lokal}"   # akun lokal khusus replikasi, hanya untuk 127.0.0.1
-MYSQL="$XAMPP/bin/mysql"
-MYSQLD="$XAMPP/sbin/mysqld"
+if [ -d "$XAMPP" ]; then
+    BASEDIR="$XAMPP"
+    MYSQL="$XAMPP/bin/mysql"; MYSQLD="$XAMPP/sbin/mysqld"
+    INSTALL_DB="$XAMPP/bin/mysql_install_db"; DUMP="$XAMPP/bin/mysqldump"
+else
+    # MariaDB sistem (mis. Ubuntu di VPS): program yang sama, nama baru didahulukan
+    cari() { for n in "$@"; do command -v "$n" 2>/dev/null && return 0; [ -x "/usr/sbin/$n" ] && echo "/usr/sbin/$n" && return 0; done; return 1; }
+    BASEDIR=/usr
+    MYSQL="$(cari mariadb mysql)" || { echo "Program mariadb/mysql tidak ditemukan." >&2; exit 1; }
+    MYSQLD="$(cari mariadbd mysqld)" || { echo "Program mariadbd tidak ditemukan." >&2; exit 1; }
+    INSTALL_DB="$(cari mariadb-install-db mysql_install_db)" || { echo "mariadb-install-db tidak ditemukan." >&2; exit 1; }
+    DUMP="$(cari mariadb-dump mysqldump)" || { echo "mariadb-dump tidak ditemukan." >&2; exit 1; }
+fi
+# Di server, slave dijalankan oleh systemd (layanan kehutanan-replika, dibuat scripts/deploy-vps.sh) agar ikut menyala saat reboot
+LAYANAN=kehutanan-replika
+pakai_systemd() { [ -f "/etc/systemd/system/$LAYANAN.service" ]; }
 
 # password root master diambil dari .env (XAMPP bawaan: kosong)
 PASS_MASTER="$(grep -E '^DB_PASSWORD=' "$ROOT/.env" 2>/dev/null | cut -d= -f2- || true)"
@@ -38,10 +52,16 @@ info()   { printf '\033[1;32m==>\033[0m %s\n' "$*"; }
 gagal()  { printf '\033[1;31mGagal:\033[0m %s\n' "$*" >&2; exit 1; }
 
 slave_hidup() { slave -e "SELECT 1" >/dev/null 2>&1; }
+matikan_slave() {
+    if pakai_systemd; then sudo systemctl stop "$LAYANAN"; return 0; fi
+    slave_hidup || return 0
+    slave -e "SHUTDOWN"; sleep 3
+}
 
 cek_master() {
-    master -e "SELECT 1" >/dev/null 2>&1 || gagal "MariaDB XAMPP (port $PORT_MASTER) belum menyala. Nyalakan MySQL di XAMPP dulu."
+    master -e "SELECT 1" >/dev/null 2>&1 || gagal "MariaDB master (port $PORT_MASTER) belum menyala atau password di .env salah."
     if [ "$(master -N -e 'SELECT @@log_bin')" != "1" ]; then
+        [ "$BASEDIR" = /usr ] && gagal "Binary log master belum aktif. Di server, jalankan ulang scripts/deploy-vps.sh."
         cat >&2 <<PESAN
 
 Binary log di MariaDB XAMPP (master) belum aktif. Jalankan sekali (butuh password Mac), lalu restart MySQL di XAMPP:
@@ -58,7 +78,7 @@ tulis_cnf() {
     mkdir -p "$DIR"
     cat > "$CNF" <<CNF
 [mysqld]
-basedir=$XAMPP
+basedir=$BASEDIR
 datadir=$DIR/data
 port=$PORT_SLAVE
 bind-address=127.0.0.1
@@ -80,7 +100,7 @@ CNF
 nyalakan() {
     slave_hidup && return 0
     [ -d "$DIR/data/mysql" ] || gagal "Slave belum disiapkan. Jalankan: scripts/replika.sh setup"
-    nohup "$MYSQLD" --defaults-file="$CNF" >/dev/null 2>&1 &
+    if pakai_systemd; then sudo systemctl start "$LAYANAN"; else nohup "$MYSQLD" --defaults-file="$CNF" >/dev/null 2>&1 & fi
     for _ in $(seq 1 30); do slave_hidup && return 0; sleep 1; done
     gagal "Slave tidak mau menyala. Lihat log: $DIR/error.log"
 }
@@ -89,14 +109,16 @@ atur_env() {  # atur_env NAMA NILAI -> tulis/ganti baris di web/.env
     local env="$ROOT/web/.env"
     if grep -q "^$1=" "$env"; then perl -pi -e "s/^$1=.*/$1=$2/" "$env"; else printf '%s=%s\n' "$1" "$2" >> "$env"; fi
 }
+hapus_env() { [ -f "$ROOT/web/.env" ] && perl -ni -e "print unless /^$1=/" "$ROOT/web/.env"; return 0; }
 
 arahkan_web() {  # sumber data website: "slave" (port 3307, kehutanan_master) atau "script" (koneksi utama)
     [ -f "$ROOT/web/.env" ] || return 0
     if [ "$1" = slave ]; then
         atur_env DATA_DB_PORT "$PORT_SLAVE"; atur_env DATA_DB_DATABASE kehutanan_master
+        atur_env DATA_DB_PASSWORD ""   # root slave tanpa password (hanya mendengar 127.0.0.1), walau root master berpassword
         info "Website membaca data dari slave (port $PORT_SLAVE, kehutanan_master)"
     else
-        atur_env DATA_DB_PORT ""; atur_env DATA_DB_DATABASE ""
+        atur_env DATA_DB_PORT ""; atur_env DATA_DB_DATABASE ""; hapus_env DATA_DB_PASSWORD
         info "Website membaca data dari replika mode script (port $PORT_MASTER, kehutanan_dashboard)"
     fi
     (cd "$ROOT/web" && php artisan config:clear >/dev/null 2>&1 || true)
@@ -106,11 +128,11 @@ python_etl() { if [ -x "$ROOT/.venv/bin/python" ]; then echo "$ROOT/.venv/bin/py
 
 perintah_setup() {
     cek_master
-    if slave_hidup; then slave -e "SHUTDOWN"; sleep 3; fi   # konfigurasi selalu ditulis ulang
+    matikan_slave   # konfigurasi selalu ditulis ulang
     tulis_cnf
     if [ ! -d "$DIR/data/mysql" ]; then
         info "Membuat server slave baru di $DIR"
-        "$XAMPP/bin/mysql_install_db" --defaults-file="$CNF" --auth-root-authentication-method=normal \
+        "$INSTALL_DB" --defaults-file="$CNF" --auth-root-authentication-method=normal \
             --skip-test-db >"$DIR/install.log" 2>&1 || gagal "mysql_install_db gagal, lihat $DIR/install.log"
     fi
     nyalakan
@@ -121,7 +143,7 @@ perintah_setup() {
                GRANT REPLICATION SLAVE ON *.* TO '$REPL_USER'@'127.0.0.1', '$REPL_USER'@'localhost';"
 
     info "Mengambil salinan awal kehutanan_master beserta posisi binary log-nya"
-    MYSQL_PWD="$PASS_MASTER" "$XAMPP/bin/mysqldump" -h 127.0.0.1 -P "$PORT_MASTER" -u root \
+    MYSQL_PWD="$PASS_MASTER" "$DUMP" -h 127.0.0.1 -P "$PORT_MASTER" -u root \
         --single-transaction --master-data=2 kehutanan_master > "$DIR/salinan-awal.sql"
     local posisi berkas pos
     posisi="$(grep -m1 'CHANGE MASTER TO' "$DIR/salinan-awal.sql")"
@@ -153,10 +175,7 @@ perintah_start() {
 
 perintah_stop() {
     arahkan_web script
-    if slave_hidup; then
-        slave -e "SHUTDOWN"
-        info "Slave dimatikan"
-    fi
+    matikan_slave && info "Slave dimatikan"
     info "Menyegarkan replika mode script (cadangan)"
     (cd "$ROOT/etl" && "$(python_etl)" replicate.py >/dev/null)
 }

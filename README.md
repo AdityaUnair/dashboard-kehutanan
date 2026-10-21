@@ -135,6 +135,24 @@ dan baris yang tidak ada lagi di sumber dihapus. Hasilnya dicatat per data di `s
 nilai di master menjadi 0, menunggu Enter, lalu sinkronisasi mengembalikannya. Refresh dashboard sebelum dan sesudah Enter.
 Pada mode Master-Slave perubahan di master langsung tersalin ke slave tanpa menjalankan script replikasi.
 
+### Deploy ke VPS (online 24 jam, laptop boleh mati)
+
+Untuk server Ubuntu 24.04, misalnya VM *Always Free* di Oracle Cloud. Hasilnya sama dengan di laptop: Laravel, MariaDB
+master (3306) dan slave (3307), serta ETL Python. Semuanya ikut menyala lagi sendiri setelah server reboot.
+
+1. Buat VM Ubuntu 24.04, lalu buka port **80 (TCP)** di firewall penyedia (Oracle: *Security List* milik subnet VM).
+2. Masuk ke server lewat SSH, lalu jalankan:
+
+```bash
+sudo apt-get install -y git
+git clone https://github.com/AdityaUnair/dashboard-kehutanan.git ~/dashboard-kehutanan
+bash ~/dashboard-kehutanan/scripts/deploy-vps.sh
+```
+
+Website dibuka di `http://ALAMAT-IP-SERVER`. Untuk memperbarui setelah ada commit baru:
+`cd ~/dashboard-kehutanan && git pull && bash scripts/deploy-vps.sh`.
+Password database dibuat acak dan disimpan di `.env` di server; port database tidak dibuka ke internet.
+
 ## Struktur folder
 
 ```
